@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Agent - 产品迭代路线图</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --accent: #06b6d4;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-light: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gradient-1: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            --gradient-2: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .nav {
+            position: fixed;
+            top: 0; left: 0;
+            width: 280px; height: 100vh;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-section { margin-bottom: 1.5rem; }
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: var(--bg-light);
+            color: var(--text);
+        }
+        .nav-link.active {
+            border-left: 3px solid var(--primary);
+            padding-left: calc(0.75rem - 3px);
+        }
+
+        .main {
+            margin-left: 280px;
+            padding: 3rem 4rem;
+            max-width: 1100px;
+        }
+
+        .hero {
+            padding: 3rem 0 4rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 3rem;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 0.375rem 1rem;
+            background: var(--gradient-1);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-desc {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            line-height: 1.6;
+        }
+        .hero-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .hero-meta span { display: flex; align-items: center; gap: 0.5rem; }
+        .hero-meta .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+        section { margin-bottom: 4rem; }
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        h2 .num {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.15);
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.375rem;
+        }
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--text);
+        }
+        h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--accent);
+        }
+        p { margin-bottom: 1rem; color: var(--text-muted); }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(37, 99, 235, 0.1);
+        }
+        .card-icon {
+            width: 48px; height: 48px;
+            border-radius: 0.75rem;
+            background: var(--gradient-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .card h4 { margin-top: 0; color: var(--text); }
+        .card p { font-size: 0.875rem; margin-bottom: 0; }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .feature-list li:last-child { border-bottom: none; }
+        .feature-list .check { color: var(--success); font-weight: 700; flex-shrink: 0; }
+        .feature-list strong { color: var(--text); }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .meta-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+        .meta-card h4 {
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            color: var(--accent);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .layer-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .layer-tag {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .dep-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .dep-link {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .dep-link:hover { background: rgba(6, 182, 212, 0.2); }
+
+        .goal {
+            font-size: 1.1rem;
+            color: var(--text);
+            padding: 1rem 1.25rem;
+            background: var(--bg-card);
+            border-left: 4px solid var(--primary);
+            border-radius: 0 0.75rem 0.75rem 0;
+            margin: 1rem 0 1.5rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .tag-mvp { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .tag-core { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .tag-expand { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .tag-advanced { background: rgba(37, 99, 235, 0.15); color: var(--primary); }
+        .tag-ga { background: rgba(124, 58, 237, 0.15); color: var(--secondary); }
+
+        /* Timeline / Gantt */
+        .timeline-wrap {
+            overflow-x: auto;
+            margin: 2rem 0;
+            padding-bottom: 1rem;
+        }
+        .timeline {
+            display: grid;
+            grid-template-columns: 140px repeat(14, 1fr);
+            gap: 0.5rem;
+            min-width: 900px;
+        }
+        .timeline-header {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .timeline-phase {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text);
+            padding: 0.75rem 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .timeline-bar {
+            height: 32px;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #fff;
+            position: relative;
+        }
+        .bar-mvp { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .bar-core { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .bar-expand { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .bar-advanced { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        .bar-ga { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); }
+
+        .risk-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .risk-card h4 { margin-top: 0; color: var(--danger); }
+        .risk-card.mitigation h4 { color: var(--success); }
+
+        .summary-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--primary);
+        }
+        .summary-box h4 { margin-top: 0; color: var(--text); }
+
+        @media (max-width: 1024px) {
+            .nav { transform: translateX(-100%); }
+            .main { margin-left: 0; padding: 2rem; }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+        section[id] { scroll-margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-logo">Nova Agent</div>
+        <div class="nav-subtitle">产品迭代路线图</div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">概览</div>
+            <a href="#overview" class="nav-link active">路线总览</a>
+            <a href="#timeline" class="nav-link">迭代时间线</a>
+            <a href="#risk" class="nav-link">风险与回退</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Phase 1 — MVP核心</div>
+            <a href="#v01" class="nav-link">v0.1 核心骨架</a>
+            <a href="#v02" class="nav-link">v0.2 文件读取</a>
+            <a href="#v03" class="nav-link">v0.3 Diff编辑</a>
+            <a href="#v04" class="nav-link">v0.4 Shell安全</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Phase 2 — 能力扩展</div>
+            <a href="#v05" class="nav-link">v0.5 管道模式</a>
+            <a href="#v06" class="nav-link">v0.6 任务规划</a>
+            <a href="#v07" class="nav-link">v0.7 MCP支持</a>
+            <a href="#v08" class="nav-link">v0.8 Hooks系统</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Phase 3 — 体验增强</div>
+            <a href="#v09" class="nav-link">v0.9 Web Dashboard</a>
+            <a href="#v10" class="nav-link">v0.10 持久记忆</a>
+            <a href="#v11" class="nav-link">v0.11 代码审查</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Phase 4 — 高级智能</div>
+            <a href="#v12" class="nav-link">v0.12 多Agent编排</a>
+            <a href="#v13" class="nav-link">v0.13 GEPA自进化</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Phase 5 — 产品成熟</div>
+            <a href="#v10-ga" class="nav-link">v1.0 稳定发布</a>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="hero">
+            <div class="hero-badge">Product Roadmap v1.0</div>
+            <h1>产品迭代路线图</h1>
+            <p class="hero-desc">
+                以收敛版哲学为起点（高信任、单Agent、Human-in-the-loop），逐步向完整版愿景演进。
+                共 14 轮迭代，从最小可运行模型到全场景智能助手。
+            </p>
+            <div class="hero-meta">
+                <span><span class="dot"></span> 14 轮迭代</span>
+                <span>5 个阶段</span>
+                <span>功能驱动节奏</span>
+            </div>
+        </div>
+
+        <section id="overview">
+            <h2><span class="num">00</span> 路线总览</h2>
+            <p>
+                迭代策略遵循<strong>"从内核到外围、从单Agent到多Agent、从基础能力到高级进化"</strong>的原则。
+                前 4 轮严格遵循收敛版哲学：所有关键操作可预览、可解释、可中断，不追求自治，专注执行质量。
+                从 v0.12 开始逐步引入完整版的高级能力（多Agent编排、GEPA自进化）。
+            </p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">1</div>
+                    <h4>Phase 1 — MVP核心</h4>
+                    <p>v0.1 ~ v0.4：能对话、能读文件、能编辑、能执行命令。所有修改需确认，所有操作可回滚。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">2</div>
+                    <h4>Phase 2 — 能力扩展</h4>
+                    <p>v0.5 ~ v0.8：模型网关接口预留，支持管道模式与批量处理，接入MCP工具生态，Hooks生命周期扩展。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">3</div>
+                    <h4>Phase 3 — 体验增强</h4>
+                    <p>v0.9 ~ v0.11：Web Dashboard可视化，持久化记忆跨会话，代码审查与重构能力。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">4</div>
+                    <h4>Phase 4 — 高级智能</h4>
+                    <p>v0.12 ~ v0.13：并行多Agent编排，GEPA自进化循环，Skill系统积累领域能力。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">5</div>
+                    <h4>Phase 5 — 产品成熟</h4>
+                    <p>v1.0：稳定化发布，消息网关全场景覆盖，企业版安全合规与私有化部署。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="timeline">
+            <h2><span class="num">00</span> 迭代时间线</h2>
+            <div class="timeline-wrap">
+                <div class="timeline">
+                    <div class="timeline-header" style="text-align:left;">阶段</div>
+                    <div class="timeline-header">v0.1</div>
+                    <div class="timeline-header">v0.2</div>
+                    <div class="timeline-header">v0.3</div>
+                    <div class="timeline-header">v0.4</div>
+                    <div class="timeline-header">v0.5</div>
+                    <div class="timeline-header">v0.6</div>
+                    <div class="timeline-header">v0.7</div>
+                    <div class="timeline-header">v0.8</div>
+                    <div class="timeline-header">v0.9</div>
+                    <div class="timeline-header">v0.10</div>
+                    <div class="timeline-header">v0.11</div>
+                    <div class="timeline-header">v0.12</div>
+                    <div class="timeline-header">v0.13</div>
+                    <div class="timeline-header">v1.0</div>
+
+                    <div class="timeline-phase">MVP核心</div>
+                    <div class="timeline-bar bar-mvp" style="grid-column: 2 / span 4;">v0.1 ~ v0.4</div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+
+                    <div class="timeline-phase">能力扩展</div>
+                    <div></div><div></div><div></div><div></div>
+                    <div class="timeline-bar bar-core" style="grid-column: 6 / span 4;">v0.5 ~ v0.8</div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div>
+
+                    <div class="timeline-phase">体验增强</div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div class="timeline-bar bar-expand" style="grid-column: 10 / span 3;">v0.9 ~ v0.11</div>
+                    <div></div><div></div>
+
+                    <div class="timeline-phase">高级智能</div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div class="timeline-bar bar-advanced" style="grid-column: 13 / span 2;">v0.12 ~ v0.13</div>
+                    <div></div>
+
+                    <div class="timeline-phase">产品成熟</div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div class="timeline-bar bar-ga" style="grid-column: 15 / span 1;">v1.0</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Phase 1 -->
+        <section id="v01">
+            <h2><span class="num">v0.1</span> 核心骨架与对话 <span class="tag tag-mvp">MVP</span></h2>
+            <p class="goal">能运行、能对话的最小可执行程序。单一 Anthropic API 模型驱动，支持 REPL 持续会话与单行命令模式。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">表现层</span>
+                        <span class="layer-tag">智能层</span>
+                        <span class="layer-tag">基础设施层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <span class="dep-link">无</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>CLI 命令解析</strong> — 解析 <code>nova</code>、<code>nova -q "..."</code>、<code>nova --version</code> 等入口</li>
+                <li><span class="check">✓</span> <strong>基础 REPL 引擎</strong> — 进入后持续对话，内存级上下文记忆（最近 10 轮）</li>
+                <li><span class="check">✓</span> <strong>模型网关（Anthropic）</strong> — 通过 Anthropic API 调用 Claude 模型，支持流式输出</li>
+                <li><span class="check">✓</span> <strong>配置管理</strong> — <code>nova setup</code> 引导配置 API Key，<code>nova doctor</code> 环境自检</li>
+                <li><span class="check">✓</span> <strong>流式渲染（基础版）</strong> — 模型输出实时打印到终端，支持换行与代码块基础格式化</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>API 连通性</strong> — 成功调用 Anthropic API 并接收流式响应，首 token 延迟 < 2s</li>
+                <li><span class="check">✓</span> <strong>上下文记忆</strong> — REPL 中连续提问能引用前文，重启后上下文重置（符合 MVP 预期）</li>
+                <li><span class="check">✓</span> <strong>单行模式</strong> — <code>nova -q "你好"</code> 输出结果后立即退出，返回码 0</li>
+                <li><span class="check">✓</span> <strong>安装体验</strong> — <code>curl -fsSL https://nova-agent.dev/install.sh | bash</code> 一键安装成功</li>
+            </ul>
+        </section>
+
+        <section id="v02">
+            <h2><span class="num">v0.2</span> 文件读取与项目理解 <span class="tag tag-mvp">MVP</span></h2>
+            <p class="goal">Agent 能"看见"代码库。自动扫描项目结构，读取文件内容，回答代码相关问题。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">表现层</span>
+                        <span class="layer-tag">智能层</span>
+                        <span class="layer-tag">基础设施层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v01" class="dep-link">v0.1</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>FS 抽象层</strong> — 统一的文件读写接口，自动处理编码、权限与大文件分片</li>
+                <li><span class="check">✓</span> <strong>项目结构扫描</strong> — 启动时自动识别技术栈（package.json、Cargo.toml 等），生成项目摘要注入系统上下文</li>
+                <li><span class="check">✓</span> <strong>文件读取工具</strong> — Agent 可主动调用工具读取指定文件或目录，用户也可通过自然语言要求"看看 src/auth.ts"</li>
+                <li><span class="check">✓</span> <strong>Stream Renderer 增强</strong> — 支持 Markdown 实时解析、代码块语法高亮（ANSI 颜色）</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>结构识别</strong> — 进入 React 项目后，Agent 知晓项目使用 TypeScript + Vite，能列出主要目录</li>
+                <li><span class="check">✓</span> <strong>文件读取</strong> — 用户问"auth 模块的登录逻辑在哪"，Agent 能正确找到并展示相关代码片段</li>
+                <li><span class="check">✓</span> <strong>渲染质量</strong> — 代码块输出包含语法高亮，Markdown 表格与列表正确渲染</li>
+                <li><span class="check">✓</span> <strong>大文件处理</strong> — 超过 500 行的文件自动分片读取，不溢出上下文窗口</li>
+            </ul>
+        </section>
+
+        <section id="v03">
+            <h2><span class="num">v0.3</span> Diff 驱动文件编辑 <span class="tag tag-mvp">MVP</span></h2>
+            <p class="goal">安全地修改文件。所有变更以 diff 形式预览，用户确认后写入，支持一键回滚。严格遵循收敛版"Plan-first + Diff预览"哲学。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">表现层</span>
+                        <span class="layer-tag">应用层</span>
+                        <span class="layer-tag">基础设施层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v02" class="dep-link">v0.2</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Diff 预览器</strong> — 终端语法高亮展示文件变更（ patience diff 算法 + ANSI 颜色），支持 hunks 级别确认</li>
+                <li><span class="check">✓</span> <strong>确认机制</strong> — 所有文件修改必须经过用户 <code>y/n</code> 确认，高危文件（如 .env、package.json）额外警告</li>
+                <li><span class="check">✓</span> <strong>备份与回滚</strong> — 修改前自动写入临时副本，支持 <code>/undo</code> 一键回滚到上一状态</li>
+                <li><span class="check">✓</span> <strong>多文件编辑</strong> — 单次对话中可生成多个文件的 diff，批量确认或逐条确认</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong> diff 准确性</strong> — 生成的 diff 与实际文件变更 100% 一致，无错位或字符丢失</li>
+                <li><span class="check">✓</span> <strong>确认不可绕过</strong> — 不存在任何配置项或命令行参数可跳过 diff 确认直接写入（安全红线）</li>
+                <li><span class="check">✓</span> <strong>回滚可靠性</strong> — <code>/undo</code> 后文件内容精确恢复到修改前状态，包括空文件与二进制文件</li>
+                <li><span class="check">✓</span> <strong>误操作防护</strong> — 修改 .gitignore、.env 等敏感文件时，终端显示红色警告并要求二次确认</li>
+            </ul>
+        </section>
+
+        <section id="v04">
+            <h2><span class="num">v0.4</span> Shell 执行与安全沙箱 <span class="tag tag-mvp">MVP</span></h2>
+            <p class="goal">让 Agent 能执行命令，但默认安全。高危操作拦截、分级授权、进度可视、优雅中断。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">表现层</span>
+                        <span class="layer-tag">应用层</span>
+                        <span class="layer-tag">基础设施层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v01" class="dep-link">v0.1</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>命令执行引擎</strong> — Agent 可调用 Shell 工具执行命令，实时捕获 stdout/stderr</li>
+                <li><span class="check">✓</span> <strong>命令白名单</strong> — 默认拦截 <code>rm -rf /</code>、<code>curl | bash</code>、<code>sudo</code> 等高危操作</li>
+                <li><span class="check">✓</span> <strong>分级授权</strong> — 低风险命令（<code>ls</code>、<code>cat</code>）自动执行，中风险（<code>npm install</code>）提示确认，高风险（<code>rm</code>、<code>git push</code>）强制确认</li>
+                <li><span class="check">✓</span> <strong>进度指示器</strong> — 长耗时命令显示实时输出与进度条，支持 <code>Ctrl+C</code> 优雅中断并清理子进程</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>拦截有效性</strong> — Agent 尝试执行 <code>rm -rf /</code> 时被自动拦截，终端显示红色禁止信息</li>
+                <li><span class="check">✓</span> <strong>确认完整性</strong> — 所有 rm/git push/网络请求均暂停等待用户输入 y/n，无静默执行漏洞</li>
+                <li><span class="check">✓</span> <strong>中断响应</strong> — 执行 <code>npm install</code> 时按 Ctrl+C，子进程在 500ms 内终止，终端恢复 REPL 提示符</li>
+                <li><span class="check">✓</span> <strong>输出完整性</strong> — 命令的 stdout/stderr 完整捕获并注入上下文，Agent 能基于错误输出定位问题</li>
+            </ul>
+        </section>
+
+        <!-- Phase 2 -->
+        <section id="v05">
+            <h2><span class="num">v0.5</span> 管道模式与模型接口预留 <span class="tag tag-core">核心扩展</span></h2>
+            <p class="goal">当前版本暂仅支持内置模型，架构层完成模型网关接口预留。引入 Unix 管道哲学，支持标准输入重定向与批量处理。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">表现层</span>
+                        <span class="layer-tag">智能层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v01" class="dep-link">v0.1</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>模型网关接口预留</strong> — 定义统一适配接口（provider、endpoint、能力标签），当前仅激活默认 Provider，后续可扩展</li>
+                <li><span class="check">✓</span> <strong>管道适配器</strong> — <code>cat error.log | nova "分析错误原因"</code> 将 stdin 封装为标准消息注入上下文</li>
+                <li><span class="check">✓</span> <strong>批量处理</strong> — <code>nova --batch *.md "翻译成英文"</code> 为每个文件创建独立子任务并聚合输出</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>接口预留完备</strong> — 模型网关接口支持定义 provider、endpoint、认证方式，新增适配器无需改动核心逻辑</li>
+                <li><span class="check">✓</span> <strong>管道正确</strong> — <code>echo "hello" | nova "翻译"</code> 输出结果包含 "hello" 的翻译，管道内容完整注入</li>
+                <li><span class="check">✓</span> <strong>批量聚合</strong> — <code>--batch</code> 处理 20 个文件后，输出按文件名分组的结果摘要，无遗漏</li>
+                <li><span class="check">✓</span> <strong>默认模型稳定</strong> — 内置模型在 REPL、管道、批量三种模式下均能正常响应，首 token 延迟 &lt; 2s</li>
+            </ul>
+        </section>
+
+        <section id="v06">
+            <h2><span class="num">v0.6</span> 任务规划与 DAG 执行 <span class="tag tag-core">核心扩展</span></h2>
+            <p class="goal">复杂需求不再一次性黑盒执行。Agent 生成可执行计划 DAG，用户确认后分步推进，每步可中断、可重试。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">智能层</span>
+                        <span class="layer-tag">应用层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v03" class="dep-link">v0.3</a>
+                        <a href="#v04" class="dep-link">v0.4</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>任务规划器</strong> — 接收高层需求后自动生成子任务 DAG，识别依赖关系（如"先写测试再写实现"）</li>
+                <li><span class="check">✓</span> <strong>任务调度器</strong> — 状态机驱动，按 DAG 拓扑顺序执行，展示当前步骤 / 总步骤 / 预计耗时</li>
+                <li><span class="check">✓</span> <strong>用户确认</strong> — 计划生成后暂停，展示 DAG 与每一步的简要说明，用户确认后才执行</li>
+                <li><span class="check">✓</span> <strong>失败暂停</strong> — 单步失败后暂停而非自动重试，Agent 分析原因并向用户报告，由用户决定重试或跳过</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>DAG 正确性</strong> — "给用户中心加双因素认证"生成包含 API 设计、前端组件、测试、迁移脚本的 DAG，依赖顺序合理</li>
+                <li><span class="check">✓</span> <strong>可视化清晰</strong> — 终端展示每步的序号、描述、状态（等待/进行中/完成/失败），进度条实时更新</li>
+                <li><span class="check">✓</span> <strong>中断可控</strong> — 执行到第 3 步时按 Ctrl+C，当前子任务终止，已完成的第 1-2 步结果保留，Agent 进入待命状态</li>
+                <li><span class="check">✓</span> <strong>失败分析</strong> — 测试运行失败后，Agent 能读取测试输出并定位到具体断言失败，生成修复建议（但不自动执行）</li>
+            </ul>
+        </section>
+
+        <section id="v07">
+            <h2><span class="num">v0.7</span> MCP 协议支持 <span class="tag tag-core">核心扩展</span></h2>
+            <p class="goal">接入外部工具生态。内置 MCP Client，连接任意 MCP Server，扩展 Agent 能力边界。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">扩展层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v06" class="dep-link">v0.6</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>MCP Client 核心</strong> — 实现 Model Context Protocol 客户端，支持 stdio 与 SSE 两种传输方式</li>
+                <li><span class="check">✓</span> <strong>工具发现</strong> — 自动枚举 MCP Server 提供的工具列表，动态生成功能说明注入系统提示</li>
+                <li><span class="check">✓</span> <strong>安装管理</strong> — <code>nova mcp add <server-name></code> 一键安装社区 MCP Server，配置自动写入 <code>mcp.json</code></li>
+                <li><span class="check">✓</span> <strong>错误隔离</strong> — MCP Server 异常崩溃不影响主 Agent，自动重连并报告故障</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>连接成功</strong> — 安装 filesystem MCP Server 后，Agent 能列出 Server 提供的工具（read_file、list_directory 等）</li>
+                <li><span class="check">✓</span> <strong>工具调用</strong> — Agent 能正确调用 MCP 工具并接收结果，结果注入上下文后 Agent 能继续推理</li>
+                <li><span class="check">✓</span> <strong>隔离有效</strong> — 手动 kill MCP Server 进程后，Agent 检测到断开并在 3s 内恢复，主进程不崩溃</li>
+                <li><span class="check">✓</span> <strong>配置持久</strong> — 安装的 MCP Server 在重启 REPL 后自动重新连接，配置存储在本地 JSON</li>
+            </ul>
+        </section>
+
+        <section id="v08">
+            <h2><span class="num">v0.8</span> Hooks 系统 <span class="tag tag-core">核心扩展</span></h2>
+            <p class="goal">生命周期可扩展。在关键事件点插入自定义行为，支持 Shell 脚本与 HTTP 触发。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">扩展层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v04" class="dep-link">v0.4</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>生命周期钩子</strong> — 支持 <code>before-command</code>、<code>after-file-change</code>、<code>on-error</code>、<code>before-exit</code> 等事件</li>
+                <li><span class="check">✓</span> <strong>条件触发</strong> — 钩子可配置正则匹配、文件类型、Git 状态等过滤条件</li>
+                <li><span class="check">✓</span> <strong>执行引擎</strong> — 钩子可配置 Shell 脚本、JavaScript 函数或调用外部 HTTP 服务</li>
+                <li><span class="check">✓</span> <strong>配置管理</strong> — <code>hooks.json</code> 声明式配置，支持全局与项目级作用域</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>触发准确</strong> — 配置 <code>after-file-change</code> 钩子匹配 *.ts 文件，修改 src/index.ts 后钩子正确触发</li>
+                <li><span class="check">✓</span> <strong>隔离安全</strong> — 钩子脚本执行失败不阻塞主流程，错误日志写入 ~/.nova/hooks.log</li>
+                <li><span class="check">✓</span> <strong>条件过滤</strong> — 配置仅当 Git 状态为 dirty 时触发 before-command 钩子，clean 状态下不触发</li>
+                <li><span class="check">✓</span> <strong>HTTP 调用</strong> — 配置 Webhook URL，错误时自动 POST 通知，请求超时 5s 不影响主流程</li>
+            </ul>
+        </section>
+
+        <!-- Phase 3 -->
+        <section id="v09">
+            <h2><span class="num">v0.9</span> Web Dashboard（最小版） <span class="tag tag-expand">体验增强</span></h2>
+            <p class="goal">提供可视化入口。<code>nova dashboard</code> 启动本地 React 面板，查看任务状态与会话历史。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">表现层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v01" class="dep-link">v0.1</a>
+                        <a href="#v06" class="dep-link">v0.6</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>本地服务</strong> — <code>nova dashboard</code> 启动 Node.js HTTP 服务，自动打开浏览器</li>
+                <li><span class="check">✓</span> <strong>会话历史</strong> — 展示当前与历史会话列表，支持搜索与导出</li>
+                <li><span class="check">✓</span> <strong>任务状态</strong> — 实时展示正在执行的 DAG 任务，步骤进度与耗时</li>
+                <li><span class="check">✓</span> <strong>模型配置</strong> — 可视化切换模型、调整温度与最大 token，无需编辑配置文件</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>状态同步</strong> — CLI 中执行任务时，Dashboard 实时更新进度，延迟 < 1s</li>
+                <li><span class="check">✓</span> <strong>刷新不丢</strong> — 刷新 Dashboard 页面后，当前任务状态与历史会话完整恢复</li>
+                <li><span class="check">✓</span> <strong>模型切换</strong> — 在 Dashboard 切换模型后，CLI 中的下一问立即使用新模型</li>
+                <li><span class="check">✓</span> <strong>本地优先</strong> — Dashboard 不依赖外部 CDN，所有资源打包在本地，数据不出本机</li>
+            </ul>
+        </section>
+
+        <section id="v10">
+            <h2><span class="num">v0.10</span> 上下文增强与持久记忆 <span class="tag tag-expand">体验增强</span></h2>
+            <p class="goal">Agent 越用越懂项目。跨会话记忆项目结构与用户偏好，支持精确上下文注入与对话压缩。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">智能层</span>
+                        <span class="layer-tag">基础设施层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v02" class="dep-link">v0.2</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>@ 引用系统</strong> — <code>@file:src/auth.ts</code>、<code>@pr:#42</code>、<code>@doc:API.md</code> 精确注入外部上下文</li>
+                <li><span class="check">✓</span> <strong>项目记忆</strong> — 自动学习项目技术栈、命名规范、模块依赖，存储在本地 SQLite，跨会话保持</li>
+                <li><span class="check">✓</span> <strong>用户偏好</strong> — 记忆用户常用命令、拒绝过的方案、代码风格偏好</li>
+                <li><span class="check">✓</span> <strong>对话压缩</strong> — 长会话自动提取关键决策与结论，释放上下文窗口空间</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>@引用精确</strong> — 输入 <code>@file:src/utils.ts</code> 后，Agent 的下一答明确引用该文件内容</li>
+                <li><span class="check">✓</span> <strong>记忆持久</strong> — 关闭 REPL 并重新进入同一项目，Agent 记得"这是 NestJS 项目，使用 Prisma"</li>
+                <li><span class="check">✓</span> <strong>偏好适配</strong> — 用户多次拒绝某种代码风格后，Agent 后续生成自动避免该风格</li>
+                <li><span class="check">✓</span> <strong>压缩无损</strong> — 50 轮对话压缩后，核心决策点不丢失，Agent 仍能回答"之前我们为什么选方案 A"</li>
+            </ul>
+        </section>
+
+        <section id="v11">
+            <h2><span class="num">v0.11</span> 代码重构与审查 <span class="tag tag-expand">体验增强</span></h2>
+            <p class="goal">从"能改"到"改得好"。提供代码审查、跨文件重构、文档同步能力。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">智能层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v03" class="dep-link">v0.3</a>
+                        <a href="#v10" class="dep-link">v0.10</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>代码审查</strong> — <code>nova review</code> 分析当前 diff，输出潜在 Bug、性能瓶颈、安全漏洞报告，附具体行号</li>
+                <li><span class="check">✓</span> <strong>跨文件重构</strong> — 重命名符号时自动更新所有引用，支持提取组件、内联函数（生成 diff 后确认）</li>
+                <li><span class="check">✓</span> <strong>文档同步</strong> — 修改函数签名后自动更新 JSDoc/TSDoc 与 README 中的相关说明</li>
+                <li><span class="check">✓</span> <strong>风格继承</strong> — 分析现有代码的 ESLint/Prettier 配置与命名约定，生成风格一致的代码</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>审查具体</strong> — <code>nova review</code> 报告包含具体文件、行号、问题描述与修复建议，非泛泛而谈</li>
+                <li><span class="check">✓</span> <strong>重构准确</strong> — 重命名变量后，项目中所有引用（包括字符串模板中的间接引用）均被更新</li>
+                <li><span class="check">✓</span> <strong>文档同步</strong> — 修改函数参数类型后，对应 JSDoc 的 @param 与 README 中的示例同步更新</li>
+                <li><span class="check">✓</span> <strong>风格一致</strong> — 生成的新代码与现有代码在引号风格、缩进、命名规范上保持一致</li>
+            </ul>
+        </section>
+
+        <!-- Phase 4 -->
+        <section id="v12">
+            <h2><span class="num">v0.12</span> 多 Agent 编排 <span class="tag tag-advanced">高级智能</span></h2>
+            <p class="goal">复杂任务并行化。从单 Agent 向多 Agent 过渡，启动并行 Specialist Agent 处理独立子任务。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">智能层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v06" class="dep-link">v0.6</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>并行 Specialist</strong> — 复杂任务自动拆分为独立子任务，启动多个 Specialist Agent 并行处理</li>
+                <li><span class="check">✓</span> <strong>消息总线</strong> — 子 Agent 通过本地消息总线交换中间结果，避免上下文冗余复制</li>
+                <li><span class="check">✓</span> <strong>结果聚合</strong> — 协调者 Agent（Orchestrator）合并多 Agent 输出，解决冲突并生成统一结论</li>
+                <li><span class="check">✓</span> <strong>资源控制</strong> — 限制并行 Agent 数量与总 token 消耗，防止资源耗尽</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>并行有效</strong> — 独立子任务（如"写前端"与"写后端"）在 2 个 Specialist Agent 中并行执行，总耗时 < 串行 60%</li>
+                <li><span class="check">✓</span> <strong>结果一致</strong> — 多 Agent 输出的 API 契约（接口定义）无冲突，聚合后前端与后端类型匹配</li>
+                <li><span class="check">✓</span> <strong>总线去重</strong> — 消息总线传输的中间结果不重复发送，网络/内存开销可控</li>
+                <li><span class="check">✓</span> <strong>降级可控</strong> — 并行数量达到上限后，新子任务自动进入队列串行执行，不报错</li>
+            </ul>
+        </section>
+
+        <section id="v13">
+            <h2><span class="num">v0.13</span> GEPA 自进化与 Skill 系统 <span class="tag tag-advanced">高级智能</span></h2>
+            <p class="goal">Agent 从"工具"进化为"学徒"。通过 GEPA 循环持续积累领域技能，重复任务效率随使用时长递增。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">智能层</span>
+                        <span class="layer-tag">扩展层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v10" class="dep-link">v0.10</a>
+                        <a href="#v12" class="dep-link">v0.12</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>GEPA 循环</strong> — Generate（生成策略）→ Evaluate（评估效果）→ Prune（剪枝低效）→ Archive（归档为 Skill）</li>
+                <li><span class="check">✓</span> <strong>Skill 文档</strong> — 每执行 15 次工具调用后自动评估，生成 Skill Document 记录成功经验与最佳实践</li>
+                <li><span class="check">✓</span> <strong>Skill 仓库</strong> — 本地存储 Skill，<code>nova skills list</code> 查看已习得技能，<code>nova skills add <name></code> 安装社区 Skill</li>
+                <li><span class="check">✓</span> <strong>Skill 组合</strong> — 多个 Skill 可组合为 Workflow，实现复杂领域任务的自动化</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>效率提升</strong> — 同类任务执行 5 次后，第 6 次执行时间较第 1 次缩短 30%+（因 Skill 指导减少试错）</li>
+                <li><span class="check">✓</span> <strong>Skill 质量</strong> — 生成的 Skill Document 包含场景描述、成功策略、失败案例与规避方法，人类可读</li>
+                <li><span class="check">✓</span> <strong>安装卸载</strong> — <code>nova skills add react-expert</code> 安装后 Agent 立即获得 React 领域能力，卸载后不影响核心功能</li>
+                <li><span class="check">✓</span> <strong>私有化支持</strong> — 企业用户可训练内部 Skill 并托管在私有仓库，不与社区共享</li>
+            </ul>
+        </section>
+
+        <!-- Phase 5 -->
+        <section id="v10-ga">
+            <h2><span class="num">v1.0</span> 稳定化与全场景覆盖 <span class="tag tag-ga">正式发布</span></h2>
+            <p class="goal">完整版产品发布。消息网关全场景覆盖，企业级安全合规，性能与稳定性达到生产标准。</p>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <h4>涉及架构层</h4>
+                    <div class="layer-tags">
+                        <span class="layer-tag">表现层</span>
+                        <span class="layer-tag">扩展层</span>
+                        <span class="layer-tag">基础设施层</span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <h4>前置依赖</h4>
+                    <div class="dep-links">
+                        <a href="#v09" class="dep-link">v0.9</a>
+                        <a href="#v13" class="dep-link">v0.13</a>
+                    </div>
+                </div>
+            </div>
+
+            <h3>交付物</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>消息网关</strong> — Slack / Telegram / Discord Bot 接入，同一 Agent 状态在终端、Dashboard、Bot 间实时同步</li>
+                <li><span class="check">✓</span> <strong>Skill 市场</strong> — 社区 Skill 发布与评分系统，支持搜索、安装、版本管理</li>
+                <li><span class="check">✓</span> <strong>MCP Server 市场</strong> — 一键安装社区 MCP Server，数据库查询、浏览器控制、Slack 通知等</li>
+                <li><span class="check">✓</span> <strong>企业版特性</strong> — 审计日志、SSO 集成、私有部署、数据隔离、合规报告（SOC 2 基础）</li>
+                <li><span class="check">✓</span> <strong>性能基准</strong> — 冷启动 < 1s，复杂任务 DAG 规划 < 3s，连续运行 72h 无内存泄漏</li>
+            </ul>
+
+            <h3>验收标准</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>跨端同步</strong> — 在 CLI 中执行任务时，Slack Bot 实时推送进度消息，Dashboard 同步更新状态</li>
+                <li><span class="check">✓</span> <strong>市场可用</strong> — Skill 市场包含至少 50 个社区 Skill，安装成功率 > 95%</li>
+                <li><span class="check">✓</span> <strong>企业合规</strong> — 所有文件修改、命令执行、API 调用均记录审计日志，支持按时间/用户/项目导出</li>
+                <li><span class="check">✓</span> <strong>长期稳定</strong> — 连续运行 72 小时执行 1000+ 次任务，内存增长 < 10%，无未捕获异常</li>
+            </ul>
+        </section>
+
+        <section id="risk">
+            <h2><span class="num">R</span> 风险与回退策略</h2>
+            <p>每轮迭代均定义明确的前置依赖与验收标准，若某轮迭代受阻，可独立回退而不影响已完成阶段。</p>
+
+            <div class="risk-card">
+                <h4>风险 1：MCP 协议生态不成熟</h4>
+                <p><strong>影响：</strong>v0.7 的 MCP 支持可能因社区 Server 质量不稳定导致体验差。</p>
+                <p><strong>回退：</strong>优先实现内置工具集（文件/Shell/Git）作为兜底，MCP 作为可选扩展而非核心依赖。</p>
+            </div>
+
+            <div class="risk-card">
+                <h4>风险 2：多 Agent 编排复杂度超预期</h4>
+                <p><strong>影响：</strong>v0.12 的并行 Specialist Agent 可能导致上下文爆炸或结果冲突难以调和。</p>
+                <p><strong>回退：</strong>退化为"伪并行"——在同一 Agent 内串行执行但快速切换角色提示，保留用户体验但降低工程复杂度。</p>
+            </div>
+
+            <div class="risk-card">
+                <h4>风险 3：GEPA 自进化效果不明显</h4>
+                <p><strong>影响：</strong>v0.13 的 Skill 积累可能因评估指标设计不当，导致生成的 Skill 质量低、无法复用。</p>
+                <p><strong>回退：</strong>将 Skill 系统降级为"手动教程模板"，用户可手动编写最佳实践模板，Agent 按模板执行，保留结构化知识但去除自动进化。</p>
+            </div>
+
+            <div class="risk-card">
+                <h4>风险 4：Web Dashboard 与 CLI 状态同步难度</h4>
+                <p><strong>影响：</strong>v0.9 的 Dashboard 可能因 IPC 机制复杂导致状态不同步或延迟高。</p>
+                <p><strong>回退：</strong>Dashboard 改为只读历史查看器，不实时同步正在执行的任务，降低架构复杂度。</p>
+            </div>
+
+            <div class="risk-card mitigation">
+                <h4>总体回退原则</h4>
+                <p>任何高级功能（v0.12 及以后）若无法在验收标准内交付，均收敛回单 Agent + 手动确认模式，确保核心"高信任开发协作者"定位不被动摇。v1.0 的发布时间不因高级功能阻塞而无限延后。</p>
+            </div>
+        </section>
+
+        <section>
+            <h2><span class="num">S</span> 总结</h2>
+            <div class="summary-box">
+                <h4>迭代哲学</h4>
+                <p>
+                    本路线图以<strong>收敛版</strong>为坚实起点，确保前 4 轮迭代交付的每一个功能都经过"可预览、可解释、可中断、可回滚"的检验。
+                    只有在核心能力稳固后，才逐步引入<strong>完整版</strong>的高级能力（多Agent、GEPA、消息网关）。
+                    这种"先扎根、后生长"的策略，既避免了早期过度设计导致的稳定性风险，又为长期愿景保留了清晰的演进路径。
+                </p>
+            </div>
+            <p style="margin-top: 1.5rem; color: var(--text-muted);">
+                每轮迭代的详细技术设计（接口定义、状态机、算法逻辑、错误处理）将在迭代启动前单独输出，
+                技术栈统一采用 React + Node.js / TypeScript。
+            </p>
+        </section>
+    </main>
+
+    <script>
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

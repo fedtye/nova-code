@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Agent v0.1 详细技术设计</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --accent: #06b6d4;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-light: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --code-bg: #1a1a2e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+        .nav {
+            position: fixed;
+            top: 0; left: 0;
+            width: 280px; height: 100vh;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .nav-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: var(--bg-light);
+            color: var(--text);
+        }
+        .nav-link.active {
+            border-left: 3px solid var(--primary);
+            padding-left: calc(0.75rem - 3px);
+        }
+        .main {
+            margin-left: 280px;
+            padding: 3rem 4rem;
+            max-width: 1000px;
+        }
+        .hero {
+            padding: 3rem 0 4rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 3rem;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 0.375rem 1rem;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+        .hero-desc {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+        section { margin-bottom: 4rem; }
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        h2 .num {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.15);
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.375rem;
+        }
+        h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--accent);
+        }
+        h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text);
+        }
+        p { margin-bottom: 1rem; color: var(--text-muted); }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .card h4 { margin-top: 0; color: var(--accent); }
+        code {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9em;
+            background: var(--code-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        .file-tree {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+        }
+        .file-tree .folder { color: #fbbf24; }
+        .file-tree .file { color: var(--text-muted); }
+        .file-tree .indent { margin-left: 1.5rem; }
+        ul { color: var(--text-muted); margin-left: 1.5rem; }
+        li { margin-bottom: 0.5rem; }
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        .tag-future { background: rgba(124, 58, 237, 0.2); color: var(--secondary); }
+        .tag-current { background: rgba(37, 99, 235, 0.2); color: var(--primary); }
+        .tag-extension { background: rgba(6, 182, 212, 0.2); color: var(--accent); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th {
+            background: var(--bg-card);
+            color: var(--accent);
+            font-weight: 600;
+        }
+        td { color: var(--text-muted); }
+        .flow-diagram {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 1rem 0;
+        }
+        .flow-box {
+            display: inline-block;
+            padding: 0.75rem 1.25rem;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 0.5rem;
+        }
+        .flow-arrow {
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning);
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning-box strong { color: var(--warning); }
+        .success-box {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success);
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .success-box strong { color: var(--success); }
+        section[id] { scroll-margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-logo">Nova Agent</div>
+        <div class="nav-subtitle">v0.1 详细技术设计</div>
+
+        <div class="nav-section-title">概览</div>
+        <a href="#overview" class="nav-link active">设计概览</a>
+        <a href="#tech-stack" class="nav-link">技术选型</a>
+        <a href="#goals" class="nav-link">设计目标</a>
+
+        <div class="nav-section-title">架构设计</div>
+        <a href="#architecture" class="nav-link">系统架构</a>
+        <a href="#layers" class="nav-link">分层设计</a>
+
+        <div class="nav-section-title">核心模块</div>
+        <a href="#types" class="nav-link">类型定义</a>
+        <a href="#model" class="nav-link">模型网关</a>
+        <a href="#config" class="nav-link">配置管理</a>
+        <a href="#cli" class="nav-link">CLI 模块</a>
+        <a href="#repl" class="nav-link">REPL 引擎</a>
+        <a href="#renderer" class="nav-link">流式渲染器</a>
+
+        <div class="nav-section-title">技术细节</div>
+        <a href="#state-machine" class="nav-link">状态机设计</a>
+        <a href="#error-handling" class="nav-link">错误处理</a>
+
+        <div class="nav-section-title">实现</div>
+        <a href="#directory" class="nav-link">目录结构</a>
+        <a href="#implementation" class="nav-link">实现计划</a>
+        <a href="#testing" class="nav-link">验收测试</a>
+    </nav>
+
+    <main class="main">
+        <div class="hero">
+            <div class="hero-badge">v0.1 核心骨架与对话</div>
+            <h1>详细技术设计文档</h1>
+            <p class="hero-desc">
+                本文档描述 Nova Agent v0.1 的技术实现细节，包括系统架构、接口定义、状态机设计等。
+                所有设计均考虑未来版本的扩展性。
+            </p>
+        </div>
+
+        <section id="overview">
+            <h2><span class="num">01</span> 设计概览</h2>
+
+            <div class="card">
+                <h4>v0.1 定位</h4>
+                <p>v0.1 是 Nova Agent 的最小可执行版本（MVP），专注于提供：</p>
+                <ul>
+                    <li>基础命令行交互能力</li>
+                    <li>持续对话的 REPL 模式</li>
+                    <li>单行命令执行模式</li>
+                    <li>与内置模型的集成</li>
+                </ul>
+            </div>
+
+            <h3 id="tech-stack">技术选型</h3>
+
+            <h4>运行时与语言</h4>
+            <table>
+                <tr>
+                    <th>技术</th>
+                    <th>版本</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td><strong>Node.js</strong></td>
+                    <td>&gt;=16</td>
+                    <td>JavaScript 运行时，跨平台支持</td>
+                </tr>
+                <tr>
+                    <td><strong>TypeScript</strong></td>
+                    <td>^5.0</td>
+                    <td>类型安全，提升代码可维护性</td>
+                </tr>
+            </table>
+
+            <h4>开发依赖</h4>
+            <table>
+                <tr>
+                    <th>依赖</th>
+                    <th>版本</th>
+                    <th>用途</th>
+                </tr>
+                <tr>
+                    <td><code>@types/node</code></td>
+                    <td>^20.0.0</td>
+                    <td>Node.js 类型定义</td>
+                </tr>
+                <tr>
+                    <td><code>typescript</code></td>
+                    <td>^5.0.0</td>
+                    <td>TypeScript 编译器</td>
+                </tr>
+                <tr>
+                    <td><code>tsx</code></td>
+                    <td>^4.0.0</td>
+                    <td>直接运行 TypeScript，无需预编译，开发体验好</td>
+                </tr>
+            </table>
+
+            <h4>运行时依赖</h4>
+            <p class="success-box">
+                <strong>v0.1 无第三方运行时依赖</strong><br>
+                仅使用 Node.js 标准库（fs、path、os、readline），最小化依赖，降低维护成本。
+            </p>
+
+            <h4>为未来版本预留的依赖</h4>
+            <table>
+                <tr>
+                    <th>依赖</th>
+                    <th>预计版本</th>
+                    <th>用途</th>
+                </tr>
+                <tr>
+                    <td><span class="tag tag-future">v0.5+</span> <code>@anthropic-ai/sdk</code></td>
+                    <td>最新</td>
+                    <td>Anthropic Claude API 客户端</td>
+                </tr>
+                <tr>
+                    <td><span class="tag tag-future">v0.3</span> <code>diff</code></td>
+                    <td>^5.0</td>
+                    <td>生成文件 diff</td>
+                </tr>
+                <tr>
+                    <td><span class="tag tag-future">v0.7</span> <code>@modelcontextprotocol/sdk</code></td>
+                    <td>最新</td>
+                    <td>MCP 协议支持</td>
+                </tr>
+                <tr>
+                    <td><span class="tag tag-future">v0.9</span> <code>express</code> 或 <code>hono</code></td>
+                    <td>最新</td>
+                    <td>Web Dashboard 后端服务</td>
+                </tr>
+                <tr>
+                    <td><span class="tag tag-future">v0.9</span> <code>react</code></td>
+                    <td>^18</td>
+                    <td>Web Dashboard 前端框架</td>
+                </tr>
+            </table>
+
+            <h4>选型理由</h4>
+            <ul>
+                <li><strong>Node.js</strong> - 跨平台，工具生态完善，CLI 应用开发成熟</li>
+                <li><strong>TypeScript</strong> - 类型系统帮助减少运行时错误，接口定义清晰，便于协作</li>
+                <li><strong>tsx</strong> - 开发体验好，无需构建步骤即可运行 TypeScript</li>
+                <li><strong>最小依赖</strong> - v0.1 仅用标准库，避免供应链风险和版本冲突</li>
+            </ul>
+
+            <h3 id="goals">设计目标</h3>
+            <ul>
+                <li><strong>可扩展性</strong> - 所有核心模块均定义清晰的接口，未来可无缝扩展</li>
+                <li><strong>可测试性</strong> - 依赖注入，模块间松耦合，便于单元测试</li>
+                <li><strong>可维护性</strong> - 清晰的分层架构，职责单一</li>
+                <li><strong>用户体验</strong> - 流式输出，响应及时</li>
+            </ul>
+        </section>
+
+        <section id="architecture">
+            <h2><span class="num">03</span> 系统架构</h2>
+
+            <h3>总体架构图</h3>
+            <div class="flow-diagram">
+                <div class="flow-box">User Input</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">CLI Parser</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">Command Router</div>
+                <br>
+                <div style="margin-left: 4rem;">
+                    <div class="flow-arrow">↙</div>
+                    <div class="flow-box">REPL Mode</div>
+                    <div class="flow-arrow">↘</div>
+                </div>
+                <div style="margin-left: 8rem; display: inline-block; vertical-align: top;">
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-box">Model Gateway</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-box">Stream Renderer</div>
+                </div>
+                <div style="margin-left: 1rem; display: inline-block; vertical-align: top;">
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-box">One-shot Mode</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="layers">
+            <h2><span class="num">04</span> 分层设计</h2>
+
+            <p>系统采用清晰的分层架构，从下到上分别为：</p>
+
+            <h4>1. 基础设施层</h4>
+            <ul>
+                <li><code>ConfigManager</code> - 配置管理</li>
+                <li><code>Logger</code> - 日志系统（预留）</li>
+                <li><code>FileStorage</code> - 文件存储（预留）</li>
+            </ul>
+
+            <h4>2. 智能层</h4>
+            <ul>
+                <li><code>ModelGateway</code> - 模型网关（当前仅内置模型）</li>
+                <li><code>ContextManager</code> - 上下文管理</li>
+                <li><code>Provider</code> 接口 - 模型提供者抽象</li>
+            </ul>
+
+            <h4>3. 应用层</h4>
+            <ul>
+                <li><code>ReplEngine</code> - REPL 会话引擎</li>
+                <li><code>CommandExecutor</code> - 命令执行器</li>
+            </ul>
+
+            <h4>4. 表现层</h4>
+            <ul>
+                <li><code>CliParser</code> - CLI 参数解析</li>
+                <li><code>StreamRenderer</code> - 流式输出渲染</li>
+            </ul>
+
+            <div class="warning-box">
+                <strong>扩展预留</strong><br>
+                所有层均通过接口而非具体实现进行交互，便于未来替换或扩展。
+            </div>
+        </section>
+
+        <section id="types">
+            <h2><span class="num">05</span> 核心类型定义</h2>
+
+            <pre><code>// src/types/index.ts
+// 消息角色
+export type Role = 'user' | 'assistant' | 'system';
+
+// 单条消息
+export interface Message {
+  id: string;
+  role: Role;
+  content: string;
+  timestamp: number;
+}
+
+// 对话上下文
+export interface ConversationContext {
+  messages: Message[];
+  maxMessages: number; // 默认 10
+  systemPrompt?: string;
+}
+
+// 模型提供者接口 - 为未来多模型预留
+export interface ModelProvider {
+  readonly id: string;
+  readonly name: string;
+
+  chat(
+    context: ConversationContext,
+    options?: ChatOptions
+  ): AsyncIterable&lt;ChatResponseChunk&gt;;
+
+  isAvailable(): Promise&lt;boolean&gt;;
+}
+
+// 聊天选项
+export interface ChatOptions {
+  temperature?: number;
+  maxTokens?: number;
+  timeoutMs?: number;
+}
+
+// 流式响应块
+export interface ChatResponseChunk {
+  type: 'content' | 'done' | 'error';
+  content?: string;
+  error?: Error;
+  usage?: TokenUsage;
+}
+
+// Token 使用统计
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
+// CLI 配置
+export interface CliConfig {
+  version: string;
+  model: ModelConfig;
+}
+
+// 模型配置
+export interface ModelConfig {
+  provider: string;
+  apiKey?: string;
+  apiBaseUrl?: string;
+  modelName?: string;
+  temperature: number;
+  maxTokens: number;
+  timeoutMs: number;
+}
+
+// CLI 配置
+export interface CliConfig {
+  version: string;
+  model: ModelConfig;
+  _meta?: ConfigMeta;
+}
+
+// 配置元数据
+export interface ConfigMeta {
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ============================================
+// 错误处理类型定义
+// ============================================
+
+// 错误码枚举
+export type ErrorCode =
+  | 'CONFIG_NOT_FOUND'
+  | 'CONFIG_INVALID'
+  | 'API_KEY_MISSING'
+  | 'API_KEY_INVALID'
+  | 'MODEL_UNAVAILABLE'
+  | 'MODEL_TIMEOUT'
+  | 'MODEL_RATE_LIMITED'
+  | 'MODEL_QUOTA_EXCEEDED'
+  | 'MODEL_INVALID_RESPONSE'
+  | 'INPUT_TOO_LONG'
+  | 'INVALID_INPUT'
+  | 'UNKNOWN_ERROR';
+
+// 错误级别
+export type ErrorLevel = 'info' | 'warning' | 'error' | 'critical';
+
+// Nova 错误类
+export class NovaError extends Error {
+  readonly code: ErrorCode;
+  readonly level: ErrorLevel;
+  readonly recoverable: boolean;
+  readonly suggestion?: string;
+  readonly cause?: Error;
+
+  constructor(options: {
+    code: ErrorCode;
+    message: string;
+    level?: ErrorLevel;
+    recoverable?: boolean;
+    suggestion?: string;
+    cause?: Error;
+  }) {
+    super(options.message);
+    this.name = 'NovaError';
+    this.code = options.code;
+    this.level = options.level ?? 'error';
+    this.recoverable = options.recoverable ?? true;
+    this.suggestion = options.suggestion;
+    this.cause = options.cause;
+  }
+
+  // 格式化用户友好的错误信息
+  toUserString(): string {
+    let output = `\n❌ 错误: ${this.message}\n`;
+    if (this.suggestion) {
+      output += `💡 建议: ${this.suggestion}\n`;
+    }
+    return output;
+  }
+}
+
+// 用户友好的错误提示文案
+export const ERROR_MESSAGES: Record<ErrorCode, { message: string; suggestion: string }> = {
+  CONFIG_NOT_FOUND: {
+    message: '配置文件不存在',
+    suggestion: '运行 `nova setup` 初始化配置'
+  },
+  CONFIG_INVALID: {
+    message: '配置文件格式错误',
+    suggestion: '检查 ~/.nova/config.json 或运行 `nova setup` 重新配置'
+  },
+  API_KEY_MISSING: {
+    message: 'Anthropic API Key 未配置',
+    suggestion: '运行 `nova setup` 输入你的 API Key，或设置环境变量 ANTHROPIC_API_KEY'
+  },
+  API_KEY_INVALID: {
+    message: 'API Key 无效或已过期',
+    suggestion: '访问 https://console.anthropic.com/ 获取新的 API Key，然后运行 `nova setup` 更新'
+  },
+  MODEL_UNAVAILABLE: {
+    message: '模型服务暂时不可用',
+    suggestion: '请稍后重试，或检查网络连接'
+  },
+  MODEL_TIMEOUT: {
+    message: '模型请求超时',
+    suggestion: '网络可能较慢，请稍后重试，或运行 `nova doctor` 检查网络'
+  },
+  MODEL_RATE_LIMITED: {
+    message: 'API 请求频率超限',
+    suggestion: '请稍后重试，或减少请求频率'
+  },
+  MODEL_QUOTA_EXCEEDED: {
+    message: 'API 配额已用尽',
+    suggestion: '访问 https://console.anthropic.com/ 查看配额或升级套餐'
+  },
+  MODEL_INVALID_RESPONSE: {
+    message: '模型返回了无效响应',
+    suggestion: '这是一个临时问题，请稍后重试'
+  },
+  INPUT_TOO_LONG: {
+    message: '输入内容超出模型上下文长度限制',
+    suggestion: '请缩短输入内容，或使用 `/clear` 清空对话历史'
+  },
+  INVALID_INPUT: {
+    message: '输入无效',
+    suggestion: '请检查你的输入内容'
+  },
+  UNKNOWN_ERROR: {
+    message: '发生了未知错误',
+    suggestion: '请稍后重试，如问题持续请报告 Bug'
+  }
+};
+
+// REPL 状态
+export type ReplState =
+  | 'idle'
+  | 'waiting_input'
+  | 'processing'
+  | 'streaming'
+  | 'error'
+  | 'exiting';
+
+// 命令类型
+export type CommandType =
+  | 'repl'          // 默认进入 REPL
+  | 'query'         // nova -q "..."
+  | 'setup'         // nova setup
+  | 'doctor'        // nova doctor
+  | 'version'       // nova --version / -v
+  | 'help';         // nova --help / -h
+
+// 解析后的命令
+export interface ParsedCommand {
+  type: CommandType;
+  payload?: {
+    query?: string;
+  };
+}</code></pre>
+        </section>
+
+        <section id="model">
+            <h2><span class="num">05</span> 模型网关设计</h2>
+
+            <h4>设计思路</h4>
+            <p>ModelGateway 是与模型交互的统一入口，当前接入 Anthropic Claude 模型，架构上预留多 Provider 扩展能力。</p>
+
+            <pre><code>// src/core/model-gateway.ts
+import type {
+  ModelProvider,
+  ConversationContext,
+  ChatOptions,
+  ChatResponseChunk
+} from '../types';
+
+export class ModelGateway {
+  private providers: Map&lt;string, ModelProvider&gt; = new Map();
+  private defaultProviderId: string;
+
+  constructor(defaultProvider: ModelProvider) {
+    this.registerProvider(defaultProvider);
+    this.defaultProviderId = defaultProvider.id;
+  }
+
+  registerProvider(provider: ModelProvider): void {
+    this.providers.set(provider.id, provider);
+  }
+
+  setDefaultProvider(providerId: string): void {
+    if (!this.providers.has(providerId)) {
+      throw new Error(`Provider ${providerId} not registered`);
+    }
+    this.defaultProviderId = providerId;
+  }
+
+  async chat(
+    context: ConversationContext,
+    options?: ChatOptions,
+    providerId?: string
+  ): Promise&lt;AsyncIterable&lt;ChatResponseChunk&gt;&gt; {
+    const id = providerId ?? this.defaultProviderId;
+    const provider = this.providers.get(id);
+    if (!provider) {
+      throw new Error(`Provider ${id} not found`);
+    }
+
+    const available = await provider.isAvailable();
+    if (!available) {
+      throw new Error(`Provider ${id} is not available`);
+    }
+
+    return provider.chat(context, options);
+  }
+
+  getAvailableProviders(): string[] {
+    return Array.from(this.providers.keys());
+  }
+}
+
+// ------------------------------------------------------------
+// src/providers/anthropic-provider.ts
+import type {
+  ModelProvider,
+  ConversationContext,
+  ChatOptions,
+  ChatResponseChunk,
+  TokenUsage,
+  Message
+} from '../types';
+import { NovaError, ERROR_MESSAGES } from '../types';
+
+// v0.1 使用 Node.js 标准库实现 HTTP 请求
+// 未来版本可切换为 @anthropic-ai/sdk
+export class AnthropicProvider implements ModelProvider {
+  readonly id = 'anthropic';
+  readonly name = 'Anthropic Claude';
+
+  private apiKey: string;
+  private apiBaseUrl: string;
+  private modelName: string;
+  private defaultTimeoutMs: number;
+
+  constructor(options: {
+    apiKey: string;
+    apiBaseUrl?: string;
+    modelName?: string;
+    defaultTimeoutMs?: number;
+  }) {
+    this.apiKey = options.apiKey;
+    this.apiBaseUrl = options.apiBaseUrl || 'https://api.anthropic.com';
+    this.modelName = options.modelName || 'claude-3-5-sonnet-20241022';
+    this.defaultTimeoutMs = options.defaultTimeoutMs || 120000;
+  }
+
+  async isAvailable(): Promise&lt;boolean&gt; {
+    try {
+      // 简单的 API Key 验证（通过发起一个极小的请求）
+      const response = await this.makeRequest(
+        [{ role: 'user', content: 'hi' }],
+        { maxTokens: 1 }
+      );
+      // 只要不抛错就认为可用
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async chat(
+    context: ConversationContext,
+    options?: ChatOptions
+  ): Promise&lt;AsyncIterable&lt;ChatResponseChunk&gt;&gt; {
+    // 验证 API Key
+    if (!this.apiKey) {
+      throw new NovaError({
+        code: 'API_KEY_MISSING',
+        ...ERROR_MESSAGES.API_KEY_MISSING,
+        recoverable: true
+      });
+    }
+
+    // 转换消息格式
+    const messages = this.convertMessages(context);
+
+    // 发起流式请求
+    return this.createStream(messages, {
+      temperature: options?.temperature,
+      maxTokens: options?.maxTokens,
+      timeoutMs: options?.timeoutMs || this.defaultTimeoutMs
+    });
+  }
+
+  // 转换内部消息格式为 Anthropic API 格式
+  private convertMessages(context: ConversationContext): Array&lt;{
+    role: 'user' | 'assistant';
+    content: string;
+  }&gt; {
+    // 过滤 system 消息（Anthropic API 通过单独参数传递）
+    return context.messages
+      .filter(msg =&gt; msg.role !== 'system')
+      .map(msg =&gt; ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      }));
+  }
+
+  // 创建流式响应
+  private async *createStream(
+    messages: Array&lt;{ role: 'user' | 'assistant'; content: string }&gt;,
+    options: {
+      temperature?: number;
+      maxTokens?: number;
+      timeoutMs: number;
+    }
+  ): AsyncIterable&lt;ChatResponseChunk&gt; {
+    const requestBody = {
+      model: this.modelName,
+      messages,
+      max_tokens: options.maxTokens || 2048,
+      temperature: options.temperature ?? 0.7,
+      stream: true
+    };
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() =&gt; controller.abort(), options.timeoutMs);
+
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      });
+
+      // 处理错误响应
+      if (!response.ok) {
+        clearTimeout(timeoutId);
+        await this.handleErrorResponse(response);
+      }
+
+      if (!response.body) {
+        throw new NovaError({
+          code: 'MODEL_INVALID_RESPONSE',
+          ...ERROR_MESSAGES.MODEL_INVALID_RESPONSE
+        });
+      }
+
+      // 解析 SSE 流式响应
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let usage: TokenUsage | undefined;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // 保留不完整的行
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const event = JSON.parse(data);
+
+              if (event.type === 'content_block_delta') {
+                const content = event.delta?.text || '';
+                if (content) {
+                  yield { type: 'content', content };
+                }
+              } else if (event.type === 'message_delta') {
+                usage = {
+                  inputTokens: event.usage?.input_tokens || 0,
+                  outputTokens: event.usage?.output_tokens || 0
+                };
+              } else if (event.type === 'message_stop') {
+                yield {
+                  type: 'done',
+                  usage: usage || { inputTokens: 0, outputTokens: 0 }
+                };
+              } else if (event.type === 'error') {
+                throw this.mapAnthropicError(event.error);
+              }
+            } catch (e) {
+              if (e instanceof NovaError) throw e;
+              // 忽略解析错误，继续处理
+            }
+          }
+        }
+      }
+
+      clearTimeout(timeoutId);
+    } catch (e) {
+      clearTimeout(timeoutId);
+
+      if (e instanceof NovaError) {
+        yield { type: 'error', error: e };
+        return;
+      }
+
+      if (e instanceof Error &amp;&amp; e.name === 'AbortError') {
+        yield {
+          type: 'error',
+          error: new NovaError({
+            code: 'MODEL_TIMEOUT',
+            ...ERROR_MESSAGES.MODEL_TIMEOUT
+          })
+        };
+        return;
+      }
+
+      yield {
+        type: 'error',
+        error: new NovaError({
+          code: 'UNKNOWN_ERROR',
+          ...ERROR_MESSAGES.UNKNOWN_ERROR,
+          cause: e instanceof Error ? e : undefined
+        })
+      };
+    }
+  }
+
+  // 处理非流式错误响应
+  private async handleErrorResponse(response: Response): Promise&lt;never&gt; {
+    let errorData: any;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = {};
+    }
+
+    throw this.mapAnthropicError(errorData.error || {}, response.status);
+  }
+
+  // 映射 Anthropic 错误到 NovaError
+  private mapAnthropicError(
+    anthropicError: { type?: string; message?: string },
+    status?: number
+  ): NovaError {
+    const type = anthropicError.type || '';
+    const message = anthropicError.message || 'Unknown error';
+
+    let code: ErrorCode = 'UNKNOWN_ERROR';
+    let recoverable = true;
+
+    if (status === 401 || type.includes('authentication')) {
+      code = 'API_KEY_INVALID';
+    } else if (status === 429) {
+      code = type.includes('token') ? 'MODEL_QUOTA_EXCEEDED' : 'MODEL_RATE_LIMITED';
+      recoverable = true;
+    } else if (status === 500 || status === 503) {
+      code = 'MODEL_UNAVAILABLE';
+    } else if (type.includes('invalid_request') &amp;&amp; message.includes('prompt')) {
+      code = 'INPUT_TOO_LONG';
+    }
+
+    const msgConfig = ERROR_MESSAGES[code];
+
+    return new NovaError({
+      code,
+      message: msgConfig.message,
+      suggestion: msgConfig.suggestion,
+      recoverable
+    });
+  }
+}</code></pre>
+        </section>
+
+        <section id="config">
+            <h2><span class="num">07</span> 配置管理设计</h2>
+
+            <h4>配置文件位置</h4>
+            <ul>
+                <li>全局配置：<code>~/.nova/config.json</code></li>
+                <li>项目配置：<code>.nova/config.json</code>（预留，v0.1 暂不支持）</li>
+            </ul>
+
+            <pre><code>// src/core/config-manager.ts
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+import type { CliConfig, ModelConfig } from '../types';
+import { NovaError, ERROR_MESSAGES } from '../types';
+
+const DEFAULT_CONFIG: CliConfig = {
+  version: '0.1.0',
+  model: {
+    provider: 'anthropic',
+    apiKey: undefined,
+    apiBaseUrl: 'https://api.anthropic.com',
+    modelName: 'claude-3-5-sonnet-20241022',
+    temperature: 0.7,
+    maxTokens: 2048,
+    timeoutMs: 120000
+  },
+  _meta: {
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  }
+};
+
+export class ConfigManager {
+  private configDir: string;
+  private configPath: string;
+  private cachedConfig: CliConfig | null = null;
+
+  constructor() {
+    this.configDir = path.join(os.homedir(), '.nova');
+    this.configPath = path.join(this.configDir, 'config.json');
+  }
+
+  async ensureConfigDir(): Promise&lt;void&gt; {
+    if (!fs.existsSync(this.configDir)) {
+      await fs.promises.mkdir(this.configDir, { recursive: true });
+    }
+  }
+
+  async loadConfig(): Promise&lt;CliConfig&gt; {
+    if (this.cachedConfig) {
+      return this.cachedConfig;
+    }
+
+    await this.ensureConfigDir();
+
+    if (!fs.existsSync(this.configPath)) {
+      await this.saveConfig(DEFAULT_CONFIG);
+      return DEFAULT_CONFIG;
+    }
+
+    try {
+      const content = await fs.promises.readFile(this.configPath, 'utf-8');
+      const config = JSON.parse(content);
+      this.cachedConfig = this.mergeWithDefaults(config);
+      return this.cachedConfig;
+    } catch {
+      throw new NovaError({
+        code: 'CONFIG_INVALID',
+        ...ERROR_MESSAGES.CONFIG_INVALID
+      });
+    }
+  }
+
+  async saveConfig(config: CliConfig): Promise&lt;void&gt; {
+    await this.ensureConfigDir();
+    // 更新元数据
+    const now = Date.now();
+    config._meta = {
+      createdAt: config._meta?.createdAt || now,
+      updatedAt: now
+    };
+    await fs.promises.writeFile(
+      this.configPath,
+      JSON.stringify(config, null, 2),
+      { mode: 0o600 } // 仅用户可读写
+    );
+    this.cachedConfig = config;
+  }
+
+  async updateModelConfig(updates: Partial&lt;ModelConfig&gt;): Promise&lt;CliConfig&gt; {
+    const config = await this.loadConfig();
+    config.model = { ...config.model, ...updates };
+    await this.saveConfig(config);
+    return config;
+  }
+
+  // 获取 API Key（优先从环境变量读取）
+  getApiKey(): string | undefined {
+    // 优先从环境变量读取
+    if (process.env.ANTHROPIC_API_KEY) {
+      return process.env.ANTHROPIC_API_KEY;
+    }
+    // 回退到配置文件
+    return this.cachedConfig?.model.apiKey;
+  }
+
+  async isConfigured(): Promise&lt;boolean&gt; {
+    return fs.existsSync(this.configPath);
+  }
+
+  getConfigPath(): string {
+    return this.configPath;
+  }
+
+  getConfigDir(): string {
+    return this.configDir;
+  }
+
+  private mergeWithDefaults(config: Partial&lt;CliConfig&gt;): CliConfig {
+    return {
+      version: config.version ?? DEFAULT_CONFIG.version,
+      model: {
+        ...DEFAULT_CONFIG.model,
+        ...config.model
+      }
+    };
+  }
+}</code></pre>
+        </section>
+
+        <section id="cli">
+            <h2><span class="num">08</span> CLI 模块设计</h2>
+
+            <h4>支持的命令</h4>
+            <table>
+                <tr>
+                    <th>命令</th>
+                    <th>描述</th>
+                </tr>
+                <tr>
+                    <td><code>nova</code></td>
+                    <td>进入 REPL 模式</td>
+                </tr>
+                <tr>
+                    <td><code>nova -q "&lt;query&gt;"</code></td>
+                    <td>单行查询模式</td>
+                </tr>
+                <tr>
+                    <td><code>nova --query "&lt;query&gt;"</code></td>
+                    <td>单行查询模式（长选项）</td>
+                </tr>
+                <tr>
+                    <td><code>nova setup</code></td>
+                    <td>配置向导</td>
+                </tr>
+                <tr>
+                    <td><code>nova doctor</code></td>
+                    <td>环境自检</td>
+                </tr>
+                <tr>
+                    <td><code>nova -v / --version</code></td>
+                    <td>显示版本号</td>
+                </tr>
+                <tr>
+                    <td><code>nova -h / --help</code></td>
+                    <td>显示帮助信息</td>
+                </tr>
+            </table>
+
+            <pre><code>// src/cli/parser.ts
+import type { ParsedCommand, CommandType } from '../types';
+
+export class CliParser {
+  private args: string[];
+
+  constructor(args: string[] = process.argv.slice(2)) {
+    this.args = args;
+  }
+
+  parse(): ParsedCommand {
+    if (this.args.length === 0) {
+      return { type: 'repl' };
+    }
+
+    const first = this.args[0];
+
+    // 子命令
+    if (first === 'setup') return { type: 'setup' };
+    if (first === 'doctor') return { type: 'doctor' };
+
+    // 选项
+    if (first === '-v' || first === '--version') {
+      return { type: 'version' };
+    }
+    if (first === '-h' || first === '--help') {
+      return { type: 'help' };
+    }
+    if (first === '-q' || first === '--query') {
+      const query = this.args.slice(1).join(' ');
+      if (!query) {
+        throw new Error('Query argument is required for -q/--query');
+      }
+      return {
+        type: 'query',
+        payload: { query }
+      };
+    }
+
+    // 未知命令，显示帮助
+    return { type: 'help' };
+  }
+}
+
+// ------------------------------------------------------------
+// src/cli/help.ts
+export const HELP_TEXT = `
+Nova Agent v0.1 - 智能开发助手
+
+用法:
+  nova                    进入 REPL 对话模式
+  nova -q "&lt;query&gt;"      单行查询模式
+  nova setup              配置向导
+  nova doctor             环境自检
+  nova -v, --version      显示版本号
+  nova -h, --help         显示此帮助信息
+
+REPL 命令:
+  /exit, /quit            退出 REPL
+  /clear                  清空上下文
+  /history                显示对话历史
+  /config                 显示当前配置
+
+示例:
+  nova
+  nova -q "帮我写一个快速排序"
+`;
+
+// ------------------------------------------------------------
+// src/cli/doctor.ts
+export class Doctor {
+  private configManager: any;
+
+  constructor(configManager: any) {
+    this.configManager = configManager;
+  }
+
+  async run(): Promise&lt;boolean&gt; {
+    console.log('🏥 Nova Agent 环境自检\n');
+
+    let allOk = true;
+
+    // 检查 Node 版本
+    const nodeOk = this.checkNodeVersion();
+    allOk = allOk &amp;&amp; nodeOk;
+
+    // 检查配置目录
+    const configOk = await this.checkConfig();
+    allOk = allOk &amp;&amp; configOk;
+
+    console.log(`\n${allOk ? '✅ 所有检查通过！' : '❌ 部分检查失败'}`);
+    return allOk;
+  }
+
+  private checkNodeVersion(): boolean {
+    const version = process.versions.node;
+    const [major] = version.split('.').map(Number);
+    const ok = major &gt;= 16;
+    console.log(`${ok ? '✅' : '❌'} Node.js: v${version} (需要 &gt;=16)`);
+    return ok;
+  }
+
+  private async checkConfig(): Promise&lt;boolean&gt; {
+    const configured = await this.configManager.isConfigured();
+    const path = this.configManager.getConfigPath();
+    console.log(`${configured ? '✅' : '⚠️'} 配置文件: ${configured ? path : '未初始化，运行 nova setup'}`);
+    return configured;
+  }
+}</code></pre>
+        </section>
+
+        <section id="repl">
+            <h2><span class="num">09</span> REPL 引擎设计</h2>
+
+            <h4 id="state-machine">REPL 状态机</h4>
+            <div class="flow-diagram">
+                <div class="flow-box">idle</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">waiting_input</div>
+                <div class="flow-arrow">↘ 用户输入</div>
+                <br>
+                <div style="margin-left: 8rem;">
+                    <div class="flow-box">processing</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">streaming</div>
+                    <div class="flow-arrow">↙</div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <div class="flow-box">idle</div>
+                    <div class="flow-arrow">←</div>
+                    <div class="flow-box">error</div>
+                </div>
+            </div>
+
+            <pre><code>// src/core/repl-engine.ts
+import * as readline from 'readline';
+import type { ReplState, Message, ConversationContext } from '../types';
+import type { ModelGateway } from './model-gateway';
+import type { StreamRenderer } from '../renderer/stream-renderer';
+
+export class ReplEngine {
+  private state: ReplState = 'idle';
+  private rl: readline.Interface | null = null;
+  private context: ConversationContext;
+  private modelGateway: ModelGateway;
+  private renderer: StreamRenderer;
+  private shouldExit = false;
+
+  constructor(options: {
+    modelGateway: ModelGateway;
+    renderer: StreamRenderer;
+    maxHistoryMessages?: number;
+  }) {
+    this.modelGateway = options.modelGateway;
+    this.renderer = options.renderer;
+    this.context = {
+      messages: [],
+      maxMessages: options.maxHistoryMessages ?? 10
+    };
+  }
+
+  async start(): Promise&lt;void&gt; {
+    this.setupReadline();
+    this.state = 'waiting_input';
+
+    console.log('\n🤖 Nova Agent v0.1');
+    console.log('输入 /help 查看可用命令，输入 /exit 退出\n');
+
+    while (!this.shouldExit) {
+      this.state = 'waiting_input';
+      const input = await this.prompt('> ');
+
+      if (input.trim()) {
+        if (this.isSlashCommand(input)) {
+          await this.handleSlashCommand(input);
+        } else {
+          await this.handleUserInput(input);
+        }
+      }
+    }
+
+    this.cleanup();
+  }
+
+  stop(): void {
+    this.shouldExit = true;
+  }
+
+  private setupReadline(): void {
+    this.rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: true
+    });
+  }
+
+  private prompt(question: string): Promise&lt;string&gt; {
+    return new Promise((resolve) =&gt; {
+      this.rl?.question(question, resolve);
+    });
+  }
+
+  private isSlashCommand(input: string): boolean {
+    return input.trim().startsWith('/');
+  }
+
+  private async handleSlashCommand(input: string): Promise&lt;void&gt; {
+    const cmd = input.trim().slice(1).toLowerCase();
+
+    switch (cmd) {
+      case 'exit':
+      case 'quit':
+        this.shouldExit = true;
+        console.log('👋 再见！');
+        break;
+      case 'clear':
+        this.context.messages = [];
+        console.log('✅ 上下文已清空');
+        break;
+      case 'history':
+        this.printHistory();
+        break;
+      case 'help':
+        this.printReplHelp();
+        break;
+      case 'config':
+        await this.printConfig();
+        break;
+      default:
+        console.log(`❌ 未知命令: /${cmd}`);
+        console.log('输入 /help 查看可用命令');
+    }
+  }
+
+  private async handleUserInput(content: string): Promise&lt;void&gt; {
+    // 添加用户消息到上下文
+    const userMessage: Message = {
+      id: this.generateId(),
+      role: 'user',
+      content,
+      timestamp: Date.now()
+    };
+    this.context.messages.push(userMessage);
+    this.trimContext();
+
+    // 调用模型
+    this.state = 'processing';
+
+    try {
+      const stream = await this.modelGateway.chat(this.context);
+
+      this.state = 'streaming';
+      const assistantContent = await this.renderer.renderStream(stream);
+
+      // 添加助手响应到上下文
+      const assistantMessage: Message = {
+        id: this.generateId(),
+        role: 'assistant',
+        content: assistantContent,
+        timestamp: Date.now()
+      };
+      this.context.messages.push(assistantMessage);
+      this.trimContext();
+
+    } catch (error) {
+      this.state = 'error';
+      console.error('\n❌ 发生错误:', error instanceof Error ? error.message : String(error));
+    }
+
+    this.state = 'idle';
+    console.log('');
+  }
+
+  private trimContext(): void {
+    const max = this.context.maxMessages;
+    if (this.context.messages.length &gt; max) {
+      const excess = this.context.messages.length - max;
+      this.context.messages = this.context.messages.slice(excess);
+    }
+  }
+
+  private printHistory(): void {
+    if (this.context.messages.length === 0) {
+      console.log('暂无对话历史');
+      return;
+    }
+    console.log(`\n📜 对话历史 (最近 ${this.context.messages.length} 条):\n`);
+    this.context.messages.forEach((msg, idx) =&gt; {
+      const role = msg.role === 'user' ? '👤' : '🤖';
+      console.log(`${role} [#${idx + 1}]: ${msg.content}`);
+    });
+    console.log('');
+  }
+
+  private printReplHelp(): void {
+    console.log(`
+REPL 命令:
+  /exit, /quit    退出
+  /clear          清空对话上下文
+  /history        显示对话历史
+  /config         显示当前配置
+  /help           显示此帮助
+`);
+  }
+
+  private async printConfig(): Promise&lt;void&gt; {
+    console.log('\n⚙️ 当前配置:');
+    console.log('  上下文最大消息数:', this.context.maxMessages);
+    console.log('  可用模型提供者:', this.modelGateway.getAvailableProviders().join(', '));
+    console.log('');
+  }
+
+  private generateId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  private cleanup(): void {
+    this.rl?.close();
+    this.rl = null;
+    this.state = 'idle';
+  }
+}</code></pre>
+        </section>
+
+        <section id="renderer">
+            <h2><span class="num">10</span> 流式渲染器设计</h2>
+
+            <pre><code>// src/renderer/stream-renderer.ts
+import type { ChatResponseChunk } from '../types';
+
+export class StreamRenderer {
+  private buffer: string = '';
+  private isRendering: boolean = false;
+
+  async renderStream(
+    stream: AsyncIterable&lt;ChatResponseChunk&gt;
+  ): Promise&lt;string&gt; {
+    this.buffer = '';
+    this.isRendering = true;
+
+    try {
+      for await (const chunk of stream) {
+        switch (chunk.type) {
+          case 'content':
+            if (chunk.content) {
+              this.buffer += chunk.content;
+              this.writeToTerminal(chunk.content);
+            }
+            break;
+          case 'done':
+            this.writeToTerminal('\n');
+            break;
+          case 'error':
+            if (chunk.error) {
+              throw chunk.error;
+            }
+            break;
+        }
+      }
+    } finally {
+      this.isRendering = false;
+    }
+
+    return this.buffer;
+  }
+
+  private writeToTerminal(content: string): void {
+    process.stdout.write(content);
+  }
+
+  getBuffer(): string {
+    return this.buffer;
+  }
+
+  clearBuffer(): void {
+    this.buffer = '';
+  }
+}</code></pre>
+        </section>
+
+        <section id="error-handling">
+            <h2><span class="num">11</span> 错误处理策略</h2>
+
+            <h4>错误分类</h4>
+            <table>
+                <tr>
+                    <th>错误类型</th>
+                    <th>描述</th>
+                    <th>处理方式</th>
+                </tr>
+                <tr>
+                    <td>配置错误</td>
+                    <td>配置文件缺失或格式错误</td>
+                    <td>提示用户运行 <code>nova setup</code></td>
+                </tr>
+                <tr>
+                    <td>模型不可用</td>
+                    <td>模型服务不可访问</td>
+                    <td>友好提示，REPL 继续运行</td>
+                </tr>
+                <tr>
+                    <td>超时</td>
+                    <td>请求超时</td>
+                    <td>显示超时提示，可重试</td>
+                </tr>
+                <tr>
+                    <td>未知错误</td>
+                    <td>其他未预期错误</td>
+                    <td>显示错误信息，REPL 继续运行</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="directory">
+            <h2><span class="num">12</span> 目录结构</h2>
+
+            <div class="file-tree">
+                <div class="folder">fly-code/</div>
+                <div class="indent">
+                    <div class="folder">src/</div>
+                    <div class="indent">
+                        <div class="file">index.ts</div>
+                        <div class="folder">cli/</div>
+                        <div class="indent">
+                            <div class="file">parser.ts</div>
+                            <div class="file">help.ts</div>
+                            <div class="file">doctor.ts</div>
+                            <div class="file">setup.ts</div>
+                        </div>
+                        <div class="folder">core/</div>
+                        <div class="indent">
+                            <div class="file">repl-engine.ts</div>
+                            <div class="file">model-gateway.ts</div>
+                            <div class="file">config-manager.ts</div>
+                        </div>
+                        <div class="folder">providers/</div>
+                        <div class="indent">
+                            <div class="file">anthropic-provider.ts</div>
+                            <div class="file">index.ts</div>
+                        </div>
+                        <div class="folder">renderer/</div>
+                        <div class="indent">
+                            <div class="file">stream-renderer.ts</div>
+                        </div>
+                        <div class="folder">types/</div>
+                        <div class="indent">
+                            <div class="file">index.ts</div>
+                        </div>
+                    </div>
+                    <div class="folder">bin/</div>
+                    <div class="indent">
+                        <div class="file">nova.js</div>
+                    </div>
+                    <div class="folder">doc/</div>
+                    <div class="folder">test/</div>
+                    <div class="file">package.json</div>
+                    <div class="file">tsconfig.json</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="implementation">
+            <h2><span class="num">13</span> 实现计划</h2>
+
+            <h4>入口文件</h4>
+            <pre><code>// src/index.ts
+import { CliParser } from './cli/parser';
+import { HELP_TEXT } from './cli/help';
+import { Doctor } from './cli/doctor';
+import { ReplEngine } from './core/repl-engine';
+import { ModelGateway } from './core/model-gateway';
+import { ConfigManager } from './core/config-manager';
+import { AnthropicProvider } from './providers/anthropic-provider';
+import { StreamRenderer } from './renderer/stream-renderer';
+import { NovaError, ERROR_MESSAGES } from './types';
+
+const VERSION = '0.1.0';
+
+async function main() {
+  try {
+    const parser = new CliParser();
+    const command = parser.parse();
+
+    const configManager = new ConfigManager();
+    let anthropicProvider: AnthropicProvider;
+
+    // 加载配置
+    try {
+      const config = await configManager.loadConfig();
+      const apiKey = configManager.getApiKey();
+
+      if (!apiKey &amp;&amp; command.type !== 'help' &amp;&amp; command.type !== 'version' &amp;&amp; command.type !== 'setup' &amp;&amp; command.type !== 'doctor') {
+        throw new NovaError({
+          code: 'API_KEY_MISSING',
+          ...ERROR_MESSAGES.API_KEY_MISSING
+        });
+      }
+
+      anthropicProvider = new AnthropicProvider({
+        apiKey: apiKey || '',
+        apiBaseUrl: config.model.apiBaseUrl,
+        modelName: config.model.modelName,
+        defaultTimeoutMs: config.model.timeoutMs
+      });
+    } catch (e) {
+      if (e instanceof NovaError) {
+        console.error(e.toUserString());
+        process.exit(1);
+      }
+      throw e;
+    }
+
+    const modelGateway = new ModelGateway(anthropicProvider);
+    const renderer = new StreamRenderer();
+
+    switch (command.type) {
+      case 'version':
+        console.log(`Nova Agent v${VERSION}`);
+        break;
+
+      case 'help':
+        console.log(HELP_TEXT);
+        break;
+
+      case 'doctor': {
+        const doctor = new Doctor(configManager);
+        await doctor.run();
+        break;
+      }
+
+      case 'setup': {
+        console.log('⚙️ Nova Setup 向导');
+        await configManager.ensureConfigDir();
+        // 这里后续可以扩展为交互式配置
+        console.log('✅ 配置目录已创建:', configManager.getConfigDir());
+        console.log('请编辑配置文件添加 API Key，或设置环境变量 ANTHROPIC_API_KEY');
+        break;
+      }
+
+      case 'query': {
+        // 单行查询模式
+        const query = command.payload?.query || '';
+        const context = {
+          messages: [{
+            id: Date.now().toString(36),
+            role: 'user',
+            content: query,
+            timestamp: Date.now()
+          }],
+          maxMessages: 10
+        };
+
+        const stream = await modelGateway.chat(context);
+        await renderer.renderStream(stream);
+        console.log('');
+        break;
+      }
+
+      case 'repl': {
+        // REPL 模式
+        const repl = new ReplEngine({
+          modelGateway,
+          renderer
+        });
+        await repl.start();
+        break;
+      }
+    }
+  } catch (error) {
+    console.error('❌', error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+}
+
+main();</code></pre>
+
+            <h4>package.json</h4>
+            <pre><code>{
+  "name": "nova-agent",
+  "version": "0.1.0",
+  "description": "Nova Agent - 智能开发助手",
+  "main": "dist/index.js",
+  "bin": {
+    "nova": "./bin/nova.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "watch": "tsc -w"
+  },
+  "keywords": ["ai", "assistant", "cli"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}</code></pre>
+        </section>
+
+        <section id="testing">
+            <h2><span class="num">14</span> 验收标准与测试</h2>
+
+            <div class="success-box">
+                <strong>验收标准</strong>
+            </div>
+
+            <h4>1. API 连通性测试</h4>
+            <ul>
+                <li>进入 REPL，发送任意消息</li>
+                <li>验证能够收到响应（来自 Anthropic Claude 模型）</li>
+            </ul>
+
+            <h4>2. 上下文记忆测试</h4>
+            <ul>
+                <li>发送第一条消息："我叫小明"</li>
+                <li>发送第二条消息："我叫什么？"</li>
+                <li>验证第二条消息能够引用上下文（v0.1 需确保历史消息在上下文中）</li>
+                <li>重启 REPL，验证上下文重置</li>
+            </ul>
+
+            <h4>3. 单行模式测试</h4>
+            <ul>
+                <li>运行 <code>nova -q "你好"</code></li>
+                <li>验证输出响应后立即退出，返回码 0</li>
+            </ul>
+
+            <h4>4. 安装体验</h4>
+            <ul>
+                <li>运行 <code>npm link</code></li>
+                <li>在任意目录运行 <code>nova</code> 可启动 REPL</li>
+            </ul>
+
+            <h4>5. 配置测试</h4>
+            <ul>
+                <li>运行 <code>nova doctor</code> 可通过环境检查</li>
+                <li>运行 <code>nova setup</code> 可完成配置</li>
+            </ul>
+
+            <h4>6. REPL 命令测试</h4>
+            <ul>
+                <li><code>/history</code> 显示对话历史</li>
+                <li><code>/clear</code> 清空上下文</li>
+                <li><code>/exit</code> 退出 REPL</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2><span class="num">15</span> 扩展预留</h2>
+
+            <h4>为未来版本预留的扩展点</h4>
+            <ul>
+                <li><span class="tag tag-future">v0.2</span> <code>ModelProvider</code> 接口 - 可扩展多种模型</li>
+                <li><span class="tag tag-future">v0.2</span> 文件系统抽象 - 预留 FS 接口</li>
+                <li><span class="tag tag-future">v0.3</span> Diff 编辑模块 - 在当前架构基础上新增</li>
+                <li><span class="tag tag-future">v0.4</span> Shell 执行模块 - 新增 CommandExecutor</li>
+                <li><span class="tag tag-future">v0.5</span> 管道模式 - 扩展 CliParser 和 stdin 读取</li>
+                <li><span class="tag tag-future">v0.9</span> Web Dashboard - 可复用核心逻辑</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2><span class="num">16</span> 总结</h2>
+            <p>
+                v0.1 版本采用清晰的分层架构，所有模块通过接口交互，便于测试和扩展。
+                ModelGateway 为未来的多模型支持预留了扩展点，ReplEngine 负责会话管理，
+                StreamRenderer 负责流式输出。整体设计遵循收敛版哲学，先打造一个稳定的核心骨架。
+            </p>
+            <p style="margin-top: 1rem; color: var(--text-muted);">
+                下一步：开始实现 v0.1 代码。
+            </p>
+        </section>
+    </main>
+
+    <script>
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

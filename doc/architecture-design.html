@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Agent - 架构设计文档</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --accent: #06b6d4;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-light: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gradient-1: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            --gradient-2: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .nav {
+            position: fixed;
+            top: 0; left: 0;
+            width: 280px; height: 100vh;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-section { margin-bottom: 1.5rem; }
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: var(--bg-light);
+            color: var(--text);
+        }
+        .nav-link.active {
+            border-left: 3px solid var(--primary);
+            padding-left: calc(0.75rem - 3px);
+        }
+
+        .main {
+            margin-left: 280px;
+            padding: 3rem 4rem;
+            max-width: 1000px;
+        }
+
+        .hero {
+            padding: 3rem 0 4rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 3rem;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 0.375rem 1rem;
+            background: var(--gradient-1);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-desc {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            line-height: 1.6;
+        }
+        .hero-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .hero-meta span { display: flex; align-items: center; gap: 0.5rem; }
+        .hero-meta .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+        section { margin-bottom: 4rem; }
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        h2 .num {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.15);
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.375rem;
+        }
+        h3 {
+            font-size: 1.375rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--text);
+        }
+        h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--accent);
+        }
+        p { margin-bottom: 1rem; color: var(--text-muted); }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(37, 99, 235, 0.1);
+        }
+        .card-icon {
+            width: 48px; height: 48px;
+            border-radius: 0.75rem;
+            background: var(--gradient-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .card h4 { margin-top: 0; color: var(--text); }
+        .card p { font-size: 0.875rem; margin-bottom: 0; }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        thead { background: var(--bg-light); }
+        th {
+            text-align: left;
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+        td { padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: rgba(37, 99, 235, 0.05); }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .tag-yes { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .tag-no { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .tag-partial { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .tag-highlight { background: rgba(37, 99, 235, 0.15); color: var(--primary); }
+
+        .feature-list { list-style: none; padding: 0; }
+        .feature-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .feature-list li:last-child { border-bottom: none; }
+        .feature-list .check { color: var(--success); font-weight: 700; flex-shrink: 0; }
+        .feature-list strong { color: var(--text); }
+
+        .layer-stack {
+            margin: 1.5rem 0;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        .layer {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .layer:last-child { border-bottom: none; }
+        .layer-indicator {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .layer-name {
+            font-weight: 600;
+            color: var(--text);
+            min-width: 140px;
+        }
+        .layer-desc { color: var(--text-muted); font-size: 0.875rem; }
+        .layer-components {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .component-tag {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+
+        .flow-diagram {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.8rem;
+            line-height: 1.8;
+            overflow-x: auto;
+        }
+        .flow-diagram .arrow { color: var(--accent); }
+        .flow-diagram .box { color: var(--primary); }
+        .flow-diagram .label { color: var(--text-muted); }
+        .flow-diagram .highlight { color: var(--warning); }
+
+        .interface-block {
+            background: var(--bg-card);
+            border-left: 4px solid var(--primary);
+            border-radius: 0 0.75rem 0.75rem 0;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .interface-block h4 { margin-top: 0; color: var(--text); }
+        .interface-block pre {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 0.75rem 0 0;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        .interface-block code {
+            font-family: 'SF Mono', Monaco, monospace;
+            color: var(--accent);
+        }
+
+        .adr-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .adr-item h4 { margin-top: 0; }
+        .adr-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.75rem;
+        }
+        .adr-status {
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        @media (max-width: 1024px) {
+            .nav { transform: translateX(-100%); }
+            .main { margin-left: 0; padding: 2rem; }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+        section[id] { scroll-margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-logo">Nova Agent</div>
+        <div class="nav-subtitle">CLI 架构设计文档</div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">概览</div>
+            <a href="#overview" class="nav-link active">架构总览</a>
+            <a href="#principles" class="nav-link">设计原则</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">分层架构</div>
+            <a href="#presentation" class="nav-link">表现层</a>
+            <a href="#application" class="nav-link">应用层</a>
+            <a href="#intelligence" class="nav-link">智能层</a>
+            <a href="#extension" class="nav-link">扩展层</a>
+            <a href="#infrastructure" class="nav-link">基础设施层</a>
+            <a href="#dataflow" class="nav-link">核心数据流</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">核心机制</div>
+            <a href="#gepa" class="nav-link">GEPA 自进化循环</a>
+            <a href="#orchestration" class="nav-link">子代理编排</a>
+            <a href="#memory" class="nav-link">持久化记忆</a>
+            <a href="#intelligence" class="nav-link">代码审查引擎</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">设计与决策</div>
+            <a href="#dataflow" class="nav-link">核心数据流</a>
+            <a href="#interfaces" class="nav-link">关键接口定义</a>
+            <a href="#tech-stack" class="nav-link">技术选型</a>
+            <a href="#adr" class="nav-link">架构决策记录</a>
+            <a href="#fallback" class="nav-link">弹性架构与回退</a>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="hero">
+            <div class="hero-badge">v1.0 Architecture Design</div>
+            <h1>Nova Agent CLI 架构设计</h1>
+            <p class="hero-desc">
+                基于产品迭代路线图，定义 Nova Agent 从 MVP 核心到完整版的演进式架构：系统分层、模块职责、核心数据流、关键接口与架构决策。
+                遵循"从内核到外围、从单 Agent 到多 Agent、从基础能力到高级进化"的分阶段激活策略，技术栈统一采用 React + Node.js / TypeScript。
+            </p>
+            <div class="hero-meta">
+                <span><span class="dot"></span> 架构版本 v1.0</span>
+                <span>文档日期 2026/05/21</span>
+                <span>状态 已确认</span>
+            </div>
+        </div>
+
+        <section id="overview">
+            <h2><span class="num">01</span> 架构总览</h2>
+            <p>
+                Nova Agent CLI 采用<strong>插件化分层架构</strong>，以 Node.js 单进程为运行时基座，通过事件总线驱动各层协作。
+                整体分为五层：表现层负责多模态用户交互，应用层管理会话与任务生命周期，智能层承载 Agent 核心能力（规划、编排、进化、记忆），
+                扩展层提供 MCP、Hooks、Skill 三重开放体系，基础设施层提供文件、安全、存储、网络等底层能力。
+            </p>
+
+            <div class="layer-stack">
+                <div class="layer">
+                    <div class="layer-indicator" style="background: #f59e0b;"></div>
+                    <div>
+                        <div class="layer-name">表现层 Presentation</div>
+                        <div class="layer-desc">CLI 命令解析、REPL 引擎、流式渲染、Diff 预览、Web Dashboard、消息网关</div>
+                        <div class="layer-components">
+                            <span class="component-tag">Command Parser</span>
+                            <span class="component-tag">REPL Engine</span>
+                            <span class="component-tag">Stream Renderer</span>
+                            <span class="component-tag">Diff Previewer</span>
+                            <span class="component-tag">Dashboard Server</span>
+                            <span class="component-tag">Bot Adapter</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layer">
+                    <div class="layer-indicator" style="background: #10b981;"></div>
+                    <div>
+                        <div class="layer-name">应用层 Application</div>
+                        <div class="layer-desc">会话管理、任务调度、权限控制、状态机驱动</div>
+                        <div class="layer-components">
+                            <span class="component-tag">Session Manager</span>
+                            <span class="component-tag">Task Scheduler</span>
+                            <span class="component-tag">Permission Controller</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layer">
+                    <div class="layer-indicator" style="background: #2563eb;"></div>
+                    <div>
+                        <div class="layer-name">智能层 Intelligence</div>
+                        <div class="layer-desc">任务规划、子代理编排、GEPA 进化、上下文管理、模型网关、代码审查</div>
+                        <div class="layer-components">
+                            <span class="component-tag">Task Planner</span>
+                            <span class="component-tag">Agent Orchestrator</span>
+                            <span class="component-tag">GEPA Loop</span>
+                            <span class="component-tag">Context Manager</span>
+                            <span class="component-tag">Model Gateway</span>
+                            <span class="component-tag">Code Review Engine</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layer">
+                    <div class="layer-indicator" style="background: #7c3aed;"></div>
+                    <div>
+                        <div class="layer-name">扩展层 Extension</div>
+                        <div class="layer-desc">MCP 协议客户端、Hooks 事件引擎、Skill 仓库、Skill / MCP 市场</div>
+                        <div class="layer-components">
+                            <span class="component-tag">MCP Client</span>
+                            <span class="component-tag">Hooks Engine</span>
+                            <span class="component-tag">Skill Repository</span>
+                            <span class="component-tag">Skill Market</span>
+                            <span class="component-tag">MCP Server Market</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layer">
+                    <div class="layer-indicator" style="background: #64748b;"></div>
+                    <div>
+                        <div class="layer-name">基础设施层 Infrastructure</div>
+                        <div class="layer-desc">文件系统抽象、安全沙箱、记忆存储、工具控制面（Tool-as-Control-Plane）</div>
+                        <div class="layer-components">
+                            <span class="component-tag">FS Abstraction</span>
+                            <span class="component-tag">Security Sandbox</span>
+                            <span class="component-tag">Memory Store</span>
+                            <span class="component-tag">Tool Controller</span>
+                            <span class="component-tag">Policy Engine</span>
+                            <span class="component-tag">HTTP-as-Tool</span>
+                            <span class="component-tag">Audit Logger</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>迭代演进映射</h3>
+            <p>架构组件按产品路线图分 5 个 Phase 渐进激活，前期严格遵循收敛版哲学（高信任、单 Agent、Human-in-the-loop），后期逐步开放完整版高级能力。</p>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">P1</div>
+                    <h4>Phase 1 — MVP 核心（v0.1~v0.4）</h4>
+                    <p>激活<strong>表现层</strong>（CLI/REPL/渲染）、<strong>应用层</strong>（会话/权限）、<strong>基础设施层</strong>（FS/沙箱）。模型层仅接入单一内置 Provider，所有修改需确认。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">P2</div>
+                    <h4>Phase 2 — 能力扩展（v0.5~v0.8）</h4>
+                    <p>激活<strong>智能层</strong>（DAG 规划）与<strong>扩展层</strong>（MCP Client、Hooks Engine）。模型网关完成接口预留，管道模式与批量处理接入表现层。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">P3</div>
+                    <h4>Phase 3 — 体验增强（v0.9~v0.11）</h4>
+                    <p>激活<strong>表现层 Dashboard</strong>、<strong>智能层上下文增强</strong>（@引用/记忆/压缩）、<strong>代码审查引擎</strong>。持久化记忆跨会话，Web 面板实时同步。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">P4</div>
+                    <h4>Phase 4 — 高级智能（v0.12~v0.13）</h4>
+                    <p>激活<strong>智能层多 Agent 编排</strong>（并行 Specialist、消息总线）与<strong>GEPA 自进化循环</strong>。Skill 系统开始积累领域能力。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">P5</div>
+                    <h4>Phase 5 — 产品成熟（v1.0）</h4>
+                    <p>激活<strong>消息网关</strong>（Slack/Telegram/Discord Bot）、<strong>扩展层市场体系</strong>（Skill Market + MCP Market）、企业版安全合规与私有化部署。</p>
+                </div>
+            </div>
+
+            <h3>组件全景图</h3>
+            <div class="flow-diagram">
+<span class="label">[User Input]</span>
+    <span class="arrow">↓</span>
+<span class="box">Command Parser / REPL Engine</span>  <span class="label">←→</span>  <span class="box">Stream Renderer</span>
+    <span class="arrow">↓</span>
+<span class="box">Session Manager</span>  <span class="label">←→</span>  <span class="box">Permission Controller</span>
+    <span class="arrow">↓</span>
+<span class="box">Task Scheduler</span>  <span class="label">(DAG Queue + State Machine)</span>
+    <span class="arrow">↓</span>
+<span class="box">Task Planner</span>  <span class="label">←→</span>  <span class="box">Model Gateway</span>
+    <span class="arrow">↓ (sub-task DAG)</span>
+<span class="box">Agent Orchestrator</span>  <span class="label">(并行 Specialist Agents)</span>
+    <span class="arrow">↓</span>
+<span class="box">Context Manager</span>  <span class="label">←→ RAG / Knowledge Graph / Memory Store</span>
+    <span class="arrow">↓</span>
+<span class="box">MCP Client / Hooks Engine / Skill Repository</span>  <span class="label">←→</span>  <span class="box">Security Sandbox / FS Abstraction</span>
+    <span class="arrow">↓</span>
+<span class="highlight">GEPA Loop</span>  <span class="label">(Generate → Evaluate → Prune → Archive)</span>
+    <span class="arrow">↓</span>
+<span class="label">[Output + Memory Archive]</span>
+            </div>
+        </section>
+
+        <section id="principles">
+            <h2><span class="num">02</span> 设计原则</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon">🏠</div>
+                    <h4>本地优先 Local-First</h4>
+                    <p>核心逻辑、文件操作、模型推理全部在本地 Node.js 进程完成，数据不出本地，保障隐私与零延迟。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔒</div>
+                    <h4>安全优先 Security-First</h4>
+                    <p>所有外部命令、网络请求、文件修改均经过沙箱审查与分级授权，默认拒绝高危操作，支持一键回滚。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔌</div>
+                    <h4>开放扩展 Open Extension</h4>
+                    <p>MCP + Hooks + Skill 三重扩展体系，每层均定义标准化接口，社区可无缝接入新工具、新事件、新能力。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔄</div>
+                    <h4>模型无关 Model-Agnostic（架构就绪）</h4>
+                    <p>模型层完全解耦，架构预留统一网关接口。v1.0 暂仅接入单一内置模型，多模型适配将在后续版本开放。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🧬</div>
+                    <h4>自我进化 Self-Evolving</h4>
+                    <p>GEPA 闭环设计使 Agent 在本地持续积累领域技能，重复任务效率随使用时长递增，无需云端训练。</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📦</div>
+                    <h4>插件化分层 Layered Plugin</h4>
+                    <p>各层通过事件总线与接口契约通信，层内模块支持热插拔替换，降低变更成本与测试覆盖难度。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="presentation">
+            <h2><span class="num">03</span> 表现层 Presentation Layer</h2>
+            <p>表现层是用户与 Nova Agent 的直接交互界面，负责解析多种输入形态、渲染流式输出、预览文件差异、管理终端状态徽章。</p>
+
+            <h3>3.1 CLI 入口组件</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>组件</th><th>职责</th><th>输入形态</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Command Parser</strong></td>
+                            <td>解析 argv、识别全局选项（<code>-q</code>, <code>--batch</code>）、子命令分发</td>
+                            <td><code>nova -q "..."</code>, <code>nova --batch *.md</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>REPL Engine</strong></td>
+                            <td>启动交互会话，维护终端状态机，处理 Tab 补全、历史召回、多轮上下文</td>
+                            <td><code>nova</code> 进入持续对话</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pipe Adapter</strong></td>
+                            <td>监听 stdin，将管道输入封装为标准消息注入 Session</td>
+                            <td><code>cat log | nova "..."</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Batch Adapter</strong></td>
+                            <td>批量文件遍历，为每个文件创建独立子任务并聚合输出</td>
+                            <td><code>nova --batch *.md</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>3.2 视觉反馈组件</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>组件</th><th>职责</th><th>关键技术</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Stream Renderer</strong></td>
+                            <td>将模型流式输出分段渲染，支持 Markdown 实时解析、代码块语法高亮</td>
+                            <td>Incremental Markdown Parser + ANSI 转义序列</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Diff Previewer</strong></td>
+                            <td>文件修改前展示语法高亮 diff，支持 hunks 选择与确认</td>
+                            <td>diff 算法（ patience / histogram ）+ 终端高亮</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Progress Indicator</strong></td>
+                            <td>多步任务进度条、当前步骤说明、耗时统计，支持 Ctrl+C 优雅中断</td>
+                            <td>终端进度条库 + 信号处理器</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status Badges</strong></td>
+                            <td>终端提示符集成 Git 分支、Python 环境、Agent 状态等上下文徽章</td>
+                            <td>Shell 集成脚本（bash/zsh/fish hook）</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>3.3 Web Dashboard（v0.9 激活）</h3>
+            <p>Dashboard 是表现层的可视化延伸，通过本地 HTTP 服务提供会话历史、任务状态与模型配置的图形化管理。所有资源本地打包，不依赖外部 CDN，数据不出本机。</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>组件</th><th>职责</th><th>关键技术</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Dashboard Server</strong></td>
+                            <td><code>nova dashboard</code> 启动本地 Node.js HTTP 服务，提供 REST API 与静态资源托管</td>
+                            <td>Express / Fastify + 本地 WebSocket（状态推送）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>React 前端</strong></td>
+                            <td>会话列表、任务 DAG 可视化、模型参数面板、历史搜索与导出</td>
+                            <td>React 18 + Vite 本地构建，零外部 CDN 依赖</td>
+                        </tr>
+                        <tr>
+                            <td><strong>State Sync Bridge</strong></td>
+                            <td>CLI 与 Dashboard 间实时双向同步（任务进度、模型切换、会话状态），延迟 &lt; 1s</td>
+                            <td>工具控制面（HTTP-as-Tool）/ SQLite 变更监听 / 本地文件锁</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>3.4 消息网关（v1.0 激活）</h3>
+            <p>消息网关将 Nova Agent 从纯 CLI 工具扩展为多端可用的智能助手，支持 Slack / Telegram / Discord Bot 接入，所有端共享同一 Agent 状态与记忆。</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>组件</th><th>职责</th><th>关键技术</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Bot Adapter</strong></td>
+                            <td>统一适配各 IM 平台协议，将收到的消息转换为内部标准消息格式</td>
+                            <td>Slack Bolt / node-telegram-bot-api / discord.js</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Message Router</strong></td>
+                            <td>根据会话 ID 将消息路由到对应 Session Manager，维护多端状态一致性</td>
+                            <td>本地消息队列 + 会话级锁</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cross-End Sync</strong></td>
+                            <td>CLI 执行任务时，Bot 实时推送进度；Dashboard 同步更新；任一端切换模型全局生效</td>
+                            <td>基于 SQLite 的发布/订阅 + WebSocket 广播</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="application">
+            <h2><span class="num">04</span> 应用层 Application Layer</h2>
+            <p>应用层是表现层与智能层之间的桥梁，负责会话生命周期管理、任务队列调度、权限分级控制与核心状态机维护。</p>
+
+            <h3>4.1 会话管理器 Session Manager</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>会话工厂</strong> — 根据输入形态创建对应会话实例（REPL / Single / Pipe / Batch），分配唯一 Session ID</li>
+                <li><span class="check">✓</span> <strong>上下文容器</strong> — 管理对话历史、用户偏好、项目记忆的会话级缓存，支持跨会话记忆加载</li>
+                <li><span class="check">✓</span> <strong>生命周期钩子</strong> — 触发 <code>session:start</code> / <code>session:end</code> 事件，供 Hooks Engine 订阅</li>
+                <li><span class="check">✓</span> <strong>持久化会话</strong> — 异常退出后支持 <code>nova resume</code> 恢复未完成任务队列</li>
+            </ul>
+
+            <h3>4.2 任务调度器 Task Scheduler</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>DAG 执行引擎</strong> — 接收 Task Planner 生成的有向无环图，拓扑排序后按依赖关系调度执行</li>
+                <li><span class="check">✓</span> <strong>任务队列</strong> — 支持内存队列（默认）与本地 SQLite 持久化队列（<code>/goal</code> 跨会话任务）</li>
+                <li><span class="check">✓</span> <strong>状态机</strong> — 每个任务经历 <code>pending → running → paused → completed | failed → archived</code></li>
+                <li><span class="check">✓</span> <strong>动态重调度</strong> — 子任务失败时暂停 DAG，触发 Planner 重规划，更新依赖后继续</li>
+            </ul>
+
+            <h3>4.3 权限控制器 Permission Controller</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>分级策略</strong> — 默认三级：safe（自动执行）、normal（提示确认）、dangerous（强制确认 + 二次输入）</li>
+                <li><span class="check">✓</span> <strong>规则引擎</strong> — 基于命令模式、目标路径、Git 状态匹配分级规则，支持用户自定义 <code>permissions.json</code></li>
+                <li><span class="check">✓</span> <strong>审计日志</strong> — 所有授权决策记录到本地审计日志，支持事后追溯</li>
+            </ul>
+        </section>
+
+        <section id="intelligence">
+            <h2><span class="num">05</span> 智能层 Intelligence Layer</h2>
+            <p>智能层是 Nova Agent 的核心大脑，包含任务规划、子代理编排、GEPA 进化、上下文管理与模型网关五大核心组件。</p>
+
+            <h3>5.1 任务规划器 Task Planner</h3>
+            <p>任务规划器负责将高层自然语言需求拆解为可执行的子任务 DAG，并在执行过程中根据反馈动态调整。</p>
+            <div class="flow-diagram">
+<span class="label">[用户输入]</span>
+    <span class="arrow">↓</span>
+<span class="box">Intent Classifier</span>  <span class="label">→ 识别任务类型（代码/重构/分析/迁移）</span>
+    <span class="arrow">↓</span>
+<span class="box">Context Collector</span>  <span class="label">→ 拉取项目结构、相关文件、历史 Skill</span>
+    <span class="arrow">↓</span>
+<span class="box">Sub-task Generator</span>  <span class="label">→ 通过 Model Gateway 生成子任务列表</span>
+    <span class="arrow">↓</span>
+<span class="box">Dependency Resolver</span>  <span class="label">→ 构建 DAG，拓扑排序，识别可并行节点</span>
+    <span class="arrow">↓</span>
+<span class="box">Scheduler</span>  <span class="label">→ 提交到 Task Scheduler 执行队列</span>
+            </div>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>意图分类器</strong> — 基于规则 + 轻量模型快速识别任务类型，路由到对应 Specialist 模板</li>
+                <li><span class="check">✓</span> <strong>上下文收集器</strong> — 调用 Context Manager 的 RAG 与知识图谱，获取最相关的项目背景</li>
+                <li><span class="check">✓</span> <strong>动态重规划</strong> — 执行中遇到未预期错误时，冻结当前 DAG，重新生成后续子任务并合并</li>
+            </ul>
+
+            <h3>5.2 模型网关 Model Gateway</h3>
+            <p>模型网关是智能层的底座，设计上屏蔽不同模型供应商的 API 差异，提供统一调用接口与上下文管理。v1.0 暂仅接入单一内置模型，架构层已预留扩展接口。</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>模块</th><th>职责</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Provider Registry</strong></td>
+                            <td>定义模型 Provider 注册接口（端点、认证、能力标签），当前仅激活默认 Provider，后续可扩展至 300+ 模型</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Request Router</strong></td>
+                            <td>当前透传至默认模型；架构预留按任务类型自动选择最优模型与故障自动降级能力，待后续版本开放</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Context Window Manager</strong></td>
+                            <td>监控上下文 token 消耗，触发 Context Manager 的压缩/摘要策略，防止超限</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Response Adapter</strong></td>
+                            <td>统一不同模型的流式/非流式输出格式，标准化 tool_call / reasoning / content 字段</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>5.3 代码审查引擎（v0.11 激活）</h3>
+            <p>代码审查引擎是智能层的质量守门员，负责静态分析当前 diff、识别潜在 Bug / 性能瓶颈 / 安全漏洞，并生成风格一致的跨文件重构方案。所有重构以 diff 形式预览，遵循"Plan-first + Diff 预览"哲学。</p>
+            <div class="flow-diagram">
+<span class="label">[Git Diff / Working Tree Changes]</span>
+    <span class="box">Diff Analyzer</span>  <span class="label">→ 提取变更文件、行号范围、影响面</span>
+    <span class="arrow">↓</span>
+<span class="box">Static Linter</span>  <span class="label">→ ESLint/Prettier/AST 规则扫描（本地执行）</span>
+    <span class="arrow">↓</span>
+<span class="box">LLM Reviewer</span>  <span class="label">→ 通过 Model Gateway 分析语义级缺陷（并发/安全/逻辑）</span>
+    <span class="arrow">↓</span>
+<span class="box">Report Generator</span>  <span class="label">→ 输出结构化报告：文件、行号、严重级别、修复建议</span>
+    <span class="arrow">↓</span>
+<span class="highlight">Refactoring Orchestrator</span>  <span class="label">→ 符号重命名、组件提取、文档同步（生成 diff → 确认 → 执行）</span>
+            </div>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Diff 分析器</strong> — 解析 <code>git diff</code> 与工作区变更，识别变更的文件、函数、接口影响面，为后续审查提供精确上下文</li>
+                <li><span class="check">✓</span> <strong>静态检查器</strong> — 集成 ESLint、Prettier、TypeScript 编译器与自定义 AST 规则，在本地执行零延迟扫描</li>
+                <li><span class="check">✓</span> <strong>LLM 语义审查</strong> — 将 diff + 项目记忆注入模型上下文，识别并发竞争、注入漏洞、逻辑死锁等深层缺陷</li>
+                <li><span class="check">✓</span> <strong>重构编排器</strong> — 执行跨文件符号重命名、组件提取、函数内联，自动更新所有引用（含字符串模板间接引用），并同步 JSDoc / README</li>
+                <li><span class="check">✓</span> <strong>风格继承器</strong> — 分析现有代码的 ESLint/Prettier 配置、引号风格、缩进与命名约定，确保生成的新代码与项目风格 100% 一致</li>
+            </ul>
+        </section>
+
+        <section id="gepa">
+            <h2><span class="num">06</span> 核心机制 — GEPA 自进化循环</h2>
+            <p>GEPA（Generate-Evaluate-Prune-Archive）是 Nova Agent 的核心差异化能力，使 Agent 能够在本地持续积累领域技能，重复任务效率随使用时长递增。</p>
+
+            <h3>6.1 循环架构</h3>
+            <div class="flow-diagram">
+<span class="label">[每完成 N 次工具调用]</span>
+    <span class="arrow">↓</span>
+<span class="highlight">Generate</span>  <span class="label">→ 自动生成 Skill Candidate 草案（任务模式 + 成功路径 + 失败教训）</span>
+    <span class="arrow">↓</span>
+<span class="highlight">Evaluate</span>  <span class="label">→ 对比历史执行数据，评估 Skill 的泛化能力与复用价值</span>
+    <span class="arrow">↓</span>
+<span class="highlight">Prune</span>  <span class="label">→ 淘汰低价值/过时的 Skill，避免记忆膨胀与负迁移</span>
+    <span class="arrow">↓</span>
+<span class="highlight">Archive</span>  <span class="label">→ 高价值 Skill 持久化为 Skill Document，存入本地 Skill Repository</span>
+    <span class="arrow">↓</span>
+<span class="box">Context Manager</span>  <span class="label">→ 后续任务自动加载匹配的 Skill 作为上下文前缀</span>
+            </div>
+
+            <h3>6.2 核心组件</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Skill Generator</strong> — 基于近期成功/失败的工具调用序列，提取可复用模式，生成包含任务描述、前置条件、执行步骤、预期输出的 Skill Candidate</li>
+                <li><span class="check">✓</span> <strong>Skill Evaluator</strong> — 在隔离测试环境中重放 Skill Candidate，对比基线执行耗时与成功率，量化 ROI 指标</li>
+                <li><span class="check">✓</span> <strong>Skill Pruner</strong> — 基于使用频率、时效性、任务漂移检测，定期清理失效 Skill，释放存储与上下文空间</li>
+                <li><span class="check">✓</span> <strong>Skill Archiver</strong> — 将验证通过的 Skill 序列化为结构化文档（Markdown + JSON Schema），存入本地 <code>.nova/skills/</code>，支持版本管理</li>
+            </ul>
+
+            <h3>6.3 与上下文管理的集成</h3>
+            <p>GEPA 循环生成的 Skill Document 通过 Context Manager 的 RAG 系统编入向量索引。当用户发起新任务时，Context Manager 自动检索最相关的 Skill 并将其注入系统提示，实现"越用越聪明"的渐进增强效果。</p>
+        </section>
+
+        <section id="orchestration">
+            <h2><span class="num">07</span> 核心机制 — 子代理编排</h2>
+            <p>子代理编排器负责将复杂任务分解为可并行的 Specialist Agent，管理它们的生命周期、通信与结果聚合。</p>
+
+            <h3>7.1 编排架构</h3>
+            <div class="flow-diagram">
+<span class="label">[Task Planner DAG]</span>
+    <span class="arrow">↓</span>
+<span class="box">Orchestrator</span>  <span class="label">→ 识别可并行子任务，匹配 Specialist Agent 类型</span>
+    <span class="arrow">↓</span>
+<span class="box">Agent Pool</span>  <span class="label">→ 复用空闲 Specialist 或 fork 新进程</span>
+    <span class="arrow">↓ (并行)</span>
+<span class="box">Code Agent</span>    <span class="box">Test Agent</span>    <span class="box">Doc Agent</span>    <span class="box">Review Agent</span>
+    <span class="arrow">↓</span>
+<span class="box">Message Bus</span>  <span class="label">→ 中间结果交换，避免上下文冗余</span>
+    <span class="arrow">↓</span>
+<span class="box">Result Aggregator</span>  <span class="label">→ 合并输出，冲突消解，统一结论</span>
+    <span class="arrow">↓</span>
+<span class="label">[统一输出 → 应用层]</span>
+            </div>
+
+            <h3>7.2 核心组件</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Agent Pool</strong> — 维护 Specialist Agent 进程池，支持复用、预热与资源上限控制，避免无限制 fork</li>
+                <li><span class="check">✓</span> <strong>Agent Factory</strong> — 根据任务类型动态加载 Agent 定义（代码、测试、文档、审查等），支持社区 Agent 市场安装</li>
+                <li><span class="check">✓</span> <strong>Message Bus</strong> — 基于工具控制面的消息总线，子代理间通过标准化的工具调用（HTTP-as-Tool）交换中间结果，所有网络交互均被封装为可审计、可拦截的工具行为</li>
+                <li><span class="check">✓</span> <strong>Result Aggregator</strong> — 对多代理输出进行冲突检测（如不同代理修改同一文件），生成合并策略（自动合并 / 用户仲裁）</li>
+                <li><span class="check">✓</span> <strong>Health Monitor</strong> — 监控子代理进程健康，异常崩溃时自动重启并恢复上下文</li>
+            </ul>
+
+            <h3>7.3 通信协议</h3>
+            <p>子代理间采用标准 JSON Message 格式通信，消息类型包括：<code>intermediate_result</code>、<code>dependency_request</code>、<code>conflict_alert</code>、<code>completion</code>。所有消息通过 Message Bus 中转，Orchestrator 作为协调中心进行路由与日志记录。</p>
+        </section>
+
+        <section id="memory">
+            <h2><span class="num">08</span> 核心机制 — 持久化记忆</h2>
+            <p>持久化记忆系统负责跨会话保存项目结构、用户偏好与领域知识，并通过知识图谱构建实体关系，支撑精准上下文检索。</p>
+
+            <h3>8.1 记忆分层</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>记忆类型</th><th>存储内容</th><th>存储介质</th><th>检索方式</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>项目记忆</strong></td>
+                            <td>项目结构、技术栈、命名规范、模块依赖关系</td>
+                            <td>SQLite + 本地文件索引</td>
+                            <td>结构化查询 + 文件路径匹配</td>
+                        </tr>
+                        <tr>
+                            <td><strong>用户偏好</strong></td>
+                            <td>代码风格、常用命令、拒绝过的方案、模型偏好</td>
+                            <td>SQLite + 本地 KV 存储</td>
+                            <td>键值查询 + 会话自动注入</td>
+                        </tr>
+                        <tr>
+                            <td><strong>对话压缩</strong></td>
+                            <td>长会话中提取的关键决策、结论、用户意图摘要</td>
+                            <td>SQLite</td>
+                            <td>语义相似度检索</td>
+                        </tr>
+                        <tr>
+                            <td><strong>对话压缩</strong></td>
+                            <td>长会话中提取的关键决策、结论、用户意图摘要</td>
+                            <td>SQLite</td>
+                            <td>语义相似度检索 + 时间衰减排序</td>
+                        </tr>
+                        <tr>
+                            <td><strong>知识图谱</strong></td>
+                            <td>项目实体（模块、接口、数据库表）及其关系</td>
+                            <td>本地嵌入式图数据库（如 SQLite + 内存图索引）</td>
+                            <td>图遍历查询（类 Gremlin/Cypher）</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>8.2 知识图谱架构</h3>
+            <div class="flow-diagram">
+<span class="label">[代码变更 / 用户输入]</span>
+    <span class="arrow">↓</span>
+<span class="box">Entity Extractor</span>  <span class="label">→ AST 解析 + 命名实体识别</span>
+    <span class="arrow">↓</span>
+<span class="box">Relation Builder</span>  <span class="label">→ 建立模块依赖、调用链、数据流关系</span>
+    <span class="arrow">↓</span>
+<span class="box">Graph Store</span>  <span class="label">→ 邻接表存储 + 增量更新</span>
+    <span class="arrow">↓</span>
+<span class="box">Query Engine</span>  <span class="label">→ 支持路径查询、最近邻、子图匹配</span>
+    <span class="arrow">↓</span>
+<span class="box">Context Assembler</span>  <span class="label">→ 将图查询结果注入模型上下文</span>
+            </div>
+
+            <h3>8.3 上下文注入</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>@ 引用解析器</strong> — 识别 <code>@file:path</code>、<code>@pr:id</code>、<code>@doc:name</code>，从对应存储加载内容并注入上下文</li>
+                <li><span class="check">✓</span> <strong>RAG 检索器</strong> — 将用户输入编码为向量，从项目代码与文档的向量索引中召回最相关片段</li>
+                <li><span class="check">✓</span> <strong>上下文压缩</strong> — 长会话（50+ 轮）自动提取关键决策、结论与用户意图摘要，释放上下文窗口空间；压缩后仍可回答"之前我们为什么选方案 A"等历史追溯问题</li>
+                <li><span class="check">✓</span> <strong>多模态解析</strong> — 截图通过本地 OCR / 视觉模型提取结构化描述；URL 通过本地抓取 + HTML→Markdown 转换</li>
+            </ul>
+        </section>
+
+        <section id="extension">
+            <h2><span class="num">09</span> 扩展层 Extension Layer</h2>
+            <p>扩展层通过 MCP、Hooks、Skill 三重体系，将 Nova Agent 从封闭工具转变为开放平台。</p>
+
+            <h3>9.1 MCP 客户端 MCP Client</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Server Discovery</strong> — 读取 <code>mcp.json</code> 配置，通过 stdio / SSE 连接 MCP Server，自动枚举工具列表</li>
+                <li><span class="check">✓</span> <strong>Tool Proxy</strong> — 将 MCP Server 暴露的工具封装为内部统一 Tool 接口，供 Task Planner 调用</li>
+                <li><span class="check">✓</span> <strong>Process Isolation</strong> — 每个 MCP Server 运行在独立子进程，崩溃不影响主 Agent，支持自动重启</li>
+                <li><span class="check">✓</span> <strong>Server Registry</strong> — 内置社区 Server 索引，支持 <code>nova mcp add &lt;name&gt;</code> 一键安装</li>
+            </ul>
+
+            <h3>9.2 Hooks 引擎 Hooks Engine</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Event Bus</strong> — 全局事件总线，定义标准生命周期事件：<code>before-command</code>、<code>after-file-change</code>、<code>on-error</code>、<code>session:start</code>、<code>task:complete</code> 等</li>
+                <li><span class="check">✓</span> <strong>Condition Matcher</strong> — 基于正则、文件类型、Git 状态、命令模式等条件决定是否触发钩子</li>
+                <li><span class="check">✓</span> <strong>Script Executor</strong> — 支持 Shell 脚本、JavaScript 函数、HTTP Webhook 三种执行方式，沙箱内运行</li>
+                <li><span class="check">✓</span> <strong>Hook Registry</strong> — 读取 <code>hooks.json</code> 注册钩子，支持社区模板一键安装</li>
+            </ul>
+
+            <h3>9.3 Skill 仓库 Skill Repository</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Local Store</strong> — 本地 <code>.nova/skills/</code> 目录存储 Skill Document，支持 Git 版本管理</li>
+                <li><span class="check">✓</span> <strong>Market Client</strong> — 连接社区 Skill Market，支持 <code>nova skills add &lt;name&gt;</code> 下载预训练 Skill</li>
+                <li><span class="check">✓</span> <strong>Composition Engine</strong> — 支持将多个 Skill 组合为 Workflow，实现复杂领域任务自动化</li>
+                <li><span class="check">✓</span> <strong>Private Registry</strong> — 企业用户可配置私有 Git 仓库或本地路径作为 Skill 源，不与社区共享</li>
+            </ul>
+
+            <h3>9.4 市场体系（v1.0 激活）</h3>
+            <p>市场体系是扩展层的社区化延伸，提供 Skill Market 与 MCP Server Market 两个核心频道，支持社区发布、评分、搜索与版本管理，使 Nova Agent 的能力边界持续扩展。</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>市场</th><th>交付物</th><th>核心能力</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Skill Market</strong></td>
+                            <td>社区 Skill 发布与评分系统，v1.0 目标 ≥50 个社区 Skill</td>
+                            <td>搜索、安装、版本管理、评分、私有化托管</td>
+                        </tr>
+                        <tr>
+                            <td><strong>MCP Server Market</strong></td>
+                            <td>一键安装社区 MCP Server（数据库查询、浏览器控制、Slack 通知等）</td>
+                            <td>Server 发现、依赖自动安装、配置向导、健康检查</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>统一索引服务</strong> — 本地缓存市场元数据索引，支持离线浏览与搜索；联网时自动同步最新版本与评分</li>
+                <li><span class="check">✓</span> <strong>安全沙箱审核</strong> — 安装前对 Skill / MCP Server 进行静态扫描，检测危险命令、越权文件访问与网络请求，拦截恶意扩展</li>
+                <li><span class="check">✓</span> <strong>版本与回滚</strong> — 支持多版本共存与一键回滚至上一版本，升级失败自动还原</li>
+            </ul>
+        </section>
+
+        <section id="infrastructure">
+            <h2><span class="num">10</span> 基础设施层 Infrastructure Layer</h2>
+            <p>基础设施层为上层提供安全、可靠、可观测的底层能力，包括文件系统抽象、安全沙箱、记忆存储与进程管理。</p>
+
+            <h3>10.1 文件系统抽象 FS Abstraction</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Workspace Isolation</strong> — 所有文件操作限定在当前工作区，防止越界访问</li>
+                <li><span class="check">✓</span> <strong>Copy-on-Write</strong> — 文件修改前先写入临时副本，支持 <code>/undo</code> 回滚到任意历史状态</li>
+                <li><span class="check">✓</span> <strong>Git Bridge</strong> — 自动读取 Git 状态、分支、提交历史，作为上下文与决策依据</li>
+                <li><span class="check">✓</span> <strong>Watcher</strong> — 监听工作区文件变更，实时更新项目记忆与知识图谱</li>
+            </ul>
+
+            <h3>10.2 安全沙箱 Security Sandbox</h3>
+            <p>
+                Security Sandbox 的职责是<strong>运行时环境隔离</strong>，而非策略审查。所有策略判断（命令黑白名单、路径守卫、域名白名单）均由 Tool Controller 的统一策略引擎在调用前完成；Sandbox 仅负责在执行阶段提供进程级隔离与资源限制，作为最后一道防线。
+            </p>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>进程级隔离</strong> — 每个 MCP Server、子 Agent、Hooks 脚本运行在独立进程，异常崩溃不影响主 Agent</li>
+                <li><span class="check">✓</span> <strong>资源限制</strong> — 对子进程设置 CPU、内存、执行超时上限，防止资源耗尽与 Fork 炸弹</li>
+                <li><span class="check">✓</span> <strong>环境隔离</strong> — 子进程继承最小环境变量集，敏感信息（SSH Key、API Key）默认不可见</li>
+                <li><span class="check">✓</span> <strong>Workspace 边界强制</strong> — 文件系统操作通过 chroot / bind-mount 限定在工作区，防止越界访问（Path Guard 的底层强制）</li>
+            </ul>
+
+            <h3>10.3 记忆存储 Memory Store</h3>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>Vector Store</strong> — 本地嵌入式向量数据库（如 sqlite-vec），存储代码与文档的 Embedding，支撑 RAG 检索</li>
+                <li><span class="check">✓</span> <strong>Graph Store</strong> — 内存图索引 + SQLite 持久化，存储知识图谱的节点与边</li>
+                <li><span class="check">✓</span> <strong>KV Store</strong> — 本地 SQLite 键值表，存储用户偏好、会话元数据、审计日志索引</li>
+            </ul>
+
+            <h3>10.4 工具控制面 Tool-as-Control-Plane</h3>
+            <p>
+                Nova Agent 采用"工具即控制面"（Tool-as-Control-Plane）的设计理念。
+                所有外部行为——文件读写、Shell 执行、HTTP 请求、进程通信、跨端状态同步——均被封装为标准化工具调用。
+                Tool Controller 不仅是路由层，更是<strong>所有工具的统一安全、策略与审计网关</strong>。
+                任何试图绕过 Tool Controller 直接操作文件系统或网络的代码都无法被执行，工具层即控制层。
+            </p>
+            <div class="flow-diagram">
+<span class="label">[Agent / Dashboard / Bot / Hook]</span>
+    <span class="arrow">↓</span>
+<span class="box">Tool Interface</span>  <span class="label">→ 标准化工具调用（name + params + schema）</span>
+    <span class="arrow">↓</span>
+<span class="box">Tool Controller + Policy Engine</span>  <span class="label">→ 策略审查（命令/路径/域名/能力）→ 路由 → 审计 → 限速 → 拦截</span>
+    <span class="arrow">↓</span>
+<span class="highlight">HTTP-as-Tool / Shell Driver / FS Driver / MCP Client</span>  <span class="label">→ 具体执行驱动</span>
+    <span class="arrow">↓</span>
+<span class="box">Security Sandbox</span>  <span class="label">→ 运行时隔离（进程级 / 资源限制）</span>
+    <span class="arrow">↓</span>
+<span class="box">Tool Response + Audit Log</span>  <span class="label">→ 统一格式注入上下文，全链路可审计</span>
+            </div>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>统一工具接口</strong> — 所有外部交互（文件读写、Shell 执行、HTTP 请求、进程通信、MCP 调用）均实现同一套 Tool 接口（name / description / inputSchema / execute），模型无需关心底层实现差异</li>
+                <li><span class="check">✓</span> <strong>统一策略引擎</strong> — 为每个工具类型（<code>shell_exec</code>、<code>file_read/write</code>、<code>http_request</code>、<code>mcp_call</code>）注册独立策略规则：白名单、黑名单、需要确认、完全禁止。高危命令 AST 解析与路径守卫在此层统一完成</li>
+                <li><span class="check">✓</span> <strong>分级授权</strong> — Level 1 只读工具自动执行；Level 2 写操作需会话级确认；Level 3 高危操作逐条确认；Level 4 黑名单命中完全禁止。策略粒度可细化到工具名 + 参数条件</li>
+                <li><span class="check">✓</span> <strong>HTTP 工具化</strong> — HTTP 请求不是裸 <code>fetch</code>，而是经过封装的 <code>http_request</code> 工具：自动附加域名白名单、速率限制、请求/响应日志、超时熔断。Dashboard、Bot、子 Agent 的通信均通过此工具完成</li>
+                <li><span class="check">✓</span> <strong>可插拔传输</strong> — 同一套 Tool 接口可由本地 HTTP Server、stdio 管道、SSE 流等不同传输层实现；更换传输层无需改动业务逻辑</li>
+                <li><span class="check">✓</span> <strong>全链路审计原生</strong> — 所有工具调用（命令、文件、网络、MCP）天然落入统一审计日志：谁、何时、通过哪个 caller、调用了什么工具、传了什么参数、返回了什么结果，结构化导出与回溯</li>
+            </ul>
+        </section>
+
+        <section id="dataflow">
+            <h2><span class="num">11</span> 核心数据流</h2>
+
+            <h3>11.1 典型请求生命周期</h3>
+            <div class="flow-diagram">
+<span class="label">1. User Input</span>
+    <span class="box">Command Parser / REPL Engine</span>
+    <span class="label">→ 解析意图，识别模式（Single / REPL / Pipe / Batch）</span>
+
+<span class="label">2. Session Init</span>
+    <span class="box">Session Manager</span>
+    <span class="label">→ 创建/恢复会话，加载用户偏好与项目记忆</span>
+
+<span class="label">3. Context Assembly</span>
+    <span class="box">Context Manager</span>
+    <span class="label">→ RAG 检索 + 知识图谱查询 + Skill 匹配 + @引用解析</span>
+
+<span class="label">4. Task Planning</span>
+    <span class="box">Task Planner + Model Gateway</span>
+    <span class="label">→ 意图分类 → 子任务生成 → 依赖解析 → DAG 输出</span>
+
+<span class="label">5. Permission Check</span>
+    <span class="box">Permission Controller</span>
+    <span class="label">→ 分级策略匹配 → 必要操作请求用户确认</span>
+
+<span class="label">6. Orchestration</span>
+    <span class="box">Agent Orchestrator</span>
+    <span class="label">→ 创建 Specialist Agents → 并行执行 → Message Bus 通信</span>
+
+<span class="label">7. Extension Invocation</span>
+    <span class="box">MCP Client / Hooks Engine / Skill Repository</span>
+    <span class="label">→ 工具调用 → 事件触发 → Skill 加载</span>
+
+<span class="label">8. Execution</span>
+    <span class="box">Tool Controller → FS Abstraction / Shell Driver / HTTP Driver / MCP Client → Security Sandbox</span>
+    <span class="label">→ Tool Controller 先做策略审查（命令/路径/域名/能力），通过后进入具体 Driver 执行，执行过程受 Security Sandbox 运行时隔离保护</span>
+
+<span class="label">9. Result Aggregation</span>
+    <span class="box">Orchestrator Result Aggregator</span>
+    <span class="label">→ 合并多代理输出 → 冲突消解 → 统一结论</span>
+
+<span class="label">10. Output & Archive</span>
+    <span class="box">Stream Renderer + GEPA Loop</span>
+    <span class="label">→ 流式渲染 → Skill 评估归档 → 记忆更新</span>
+            </div>
+
+            <h3>11.2 GEPA 循环数据流</h3>
+            <div class="flow-diagram">
+<span class="box">Tool Call Logger</span>  <span class="label">→ 记录每次工具调用的输入、输出、耗时、结果</span>
+    <span class="arrow">↓ (每 N 次调用触发)</span>
+<span class="highlight">Generate</span>
+    <span class="box">Skill Generator</span>  <span class="label">→ 提取成功模式，生成 Skill Candidate</span>
+    <span class="arrow">↓</span>
+<span class="highlight">Evaluate</span>
+    <span class="box">Skill Evaluator</span>  <span class="label">→ 重放验证，量化 ROI（耗时降低率、成功率提升）</span>
+    <span class="arrow">↓</span>
+<span class="highlight">Prune</span>
+    <span class="box">Skill Pruner</span>  <span class="label">→ 对比现有 Skill，淘汰低价值项</span>
+    <span class="arrow">↓</span>
+<span class="highlight">Archive</span>
+    <span class="box">Skill Archiver</span>  <span class="label">→ 写入 .nova/skills/，更新向量索引</span>
+    <span class="arrow">↓</span>
+<span class="box">Context Manager</span>  <span class="label">→ 将新 Skill 纳入后续任务 RAG 检索范围</span>
+            </div>
+
+            <h3>11.3 跨端状态同步数据流（v1.0）</h3>
+            <p>当消息网关激活后，CLI、Dashboard 与 Bot 共享同一本地状态存储。所有跨端通信不走裸 Socket，而是通过工具控制面（HTTP-as-Tool）完成：状态变更被封装为工具调用，经 Tool Controller 路由到对应端点。</p>
+            <div class="flow-diagram">
+<span class="label">[CLI 执行命令 / Agent 生成输出]</span>
+    <span class="box">Session Manager</span>  <span class="label">→ 更新本地 SQLite 会话状态与任务进度</span>
+    <span class="arrow">↓</span>
+<span class="box">Tool Controller</span>  <span class="label">→ 将状态变更封装为 <code>sync_state</code> 工具调用，路由到各端</span>
+    <span class="arrow">↓ (HTTP-as-Tool)</span>
+<span class="box">Dashboard Server</span>  <span class="label">→ 接收 <code>sync_state</code> 工具调用，WebSocket 推送至浏览器，实时刷新进度 &lt; 1s</span>
+<span class="box">Bot Adapter</span>  <span class="label">→ 接收 <code>sync_state</code> 工具调用，推送进度消息至 Slack / Telegram / Discord</span>
+    <span class="arrow">↓</span>
+<span class="label">[任一端切换模型 / 中断任务]</span>
+    <span class="box">反向同步</span>  <span class="label">→ 同样通过 <code>sync_state</code> 工具调用写回 SQLite，确保全局状态一致</span>
+            </div>
+            <ul class="feature-list">
+                <li><span class="check">✓</span> <strong>工具即通道</strong> — 所有跨端通信均为标准化工具调用，可被审计、拦截、重放；不存在裸 HTTP 或裸 Socket 直连</li>
+                <li><span class="check">✓</span> <strong>本地优先</strong> — 所有状态存储在本地 SQLite，不依赖云端，离线场景下多端同步仍可用</li>
+                <li><span class="check">✓</span> <strong>延迟保证</strong> — CLI → Dashboard 延迟 &lt; 1s；CLI → Bot 延迟 &lt; 2s（受 IM 平台 API 限制）</li>
+                <li><span class="check">✓</span> <strong>冲突消解</strong> — 同一时刻仅允许一个"写入端"，通过会话级文件锁避免状态冲突；Dashboard 与 Bot 默认只读，配置面板需申请锁</li>
+            </ul>
+        </section>
+
+        <section id="interfaces">
+            <h2><span class="num">12</span> 关键接口定义</h2>
+            <p>以下定义关键模块间的接口契约，采用 TypeScript 类型描述，不含具体实现。</p>
+
+            <div class="interface-block">
+                <h4>Task Planner ↔ Task Scheduler</h4>
+                <pre><code>interface TaskDAG {
+  id: string;
+  nodes: TaskNode[];
+  edges: { from: string; to: string }[];
+}
+
+interface TaskNode {
+  id: string;
+  type: 'code' | 'test' | 'doc' | 'review' | 'shell';
+  description: string;
+  dependencies: string[];
+  estimatedTokens: number;
+}
+
+interface TaskPlanner {
+  plan(input: UserIntent, context: ContextSnapshot): Promise&lt;TaskDAG&gt;;
+  replan(failedNodeId: string, error: ExecutionError, context: ContextSnapshot): Promise&lt;TaskDAG&gt;;
+}
+
+interface TaskScheduler {
+  submit(dag: TaskDAG, sessionId: string): Promise&lt;string&gt;; // 返回 jobId
+  pause(jobId: string): Promise&lt;void&gt;;
+  resume(jobId: string): Promise&lt;void&gt;;
+  onStatusChange(jobId: string, callback: (status: TaskStatus) =&gt; void): void;
+}</code></pre>
+            </div>
+
+            <div class="interface-block">
+                <h4>Agent Orchestrator ↔ Specialist Agent</h4>
+                <pre><code>interface SpecialistAgent {
+  id: string;
+  type: AgentType;
+  execute(task: TaskNode, context: AgentContext): Promise&lt;AgentResult&gt;;
+}
+
+interface AgentContext {
+  sessionId: string;
+  messageBus: MessageBus;
+  modelGateway: ModelGateway;
+  fsAbstraction: FSAbstraction;
+}
+
+interface AgentResult {
+  taskId: string;
+  status: 'success' | 'failure' | 'partial';
+  outputs: ResultOutput[];
+  conflicts?: ConflictReport[];
+}
+
+interface AgentOrchestrator {
+  forkAgents(dag: TaskDAG, context: AgentContext): Promise&lt;SpecialistAgent[]&gt;;
+  aggregateResults(results: AgentResult[]): Promise&lt;AggregatedResult&gt;;
+}
+
+interface MessageBus {
+  publish(topic: string, message: AgentMessage): void;
+  subscribe(topic: string, handler: (msg: AgentMessage) =&gt; void): () =&gt; void;
+}</code></pre>
+            </div>
+
+            <div class="interface-block">
+                <h4>Context Manager ↔ Model Gateway</h4>
+                <pre><code>interface ContextSnapshot {
+  sessionHistory: ChatMessage[];
+  projectMemory: ProjectMemory;
+  userPreferences: UserPreferences;
+  knowledgeGraphQuery: GraphQueryResult;
+  skillContext: SkillDocument[];
+  injectedRefs: InjectedReference[];
+  ragChunks: RAGChunk[];
+}
+
+interface ContextManager {
+  buildSnapshot(sessionId: string, userInput: string): Promise&lt;ContextSnapshot&gt;;
+  compressHistory(sessionId: string, targetTokens: number): Promise&lt;void&gt;;
+  injectReference(ref: ReferenceToken): Promise&lt;InjectedReference&gt;;
+  updateKnowledgeGraph(fileChanges: FileChange[]): Promise&lt;void&gt;;
+}
+
+interface ModelGateway {
+  chat(request: ChatRequest, provider?: string): AsyncIterable&lt;ChatChunk&gt;;
+  getProviderForTask(taskType: TaskType): string;
+  countTokens(text: string, provider: string): number;
+}</code></pre>
+            </div>
+
+            <div class="interface-block">
+                <h4>MCP Client ↔ Extension Layer</h4>
+                <pre><code>interface MCPServer {
+  id: string;
+  transport: 'stdio' | 'sse';
+  command?: string;
+  url?: string;
+  tools: MCPTool[];
+}
+
+interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: JSONSchema;
+}
+
+interface MCPClient {
+  connect(server: MCPServer): Promise&lt;void&gt;;
+  disconnect(serverId: string): Promise&lt;void&gt;;
+  callTool(serverId: string, toolName: string, args: Record&lt;string, unknown&gt;): Promise&lt;ToolResult&gt;;
+  listTools(serverId: string): Promise&lt;MCPTool[]&gt;;
+}
+
+interface HooksEngine {
+  register(hook: HookDefinition): void;
+  unregister(hookId: string): void;
+  emit(event: LifecycleEvent, payload: EventPayload): Promise&lt;void&gt;;
+}</code></pre>
+            </div>
+
+            <div class="interface-block">
+                <h4>Hooks Engine ↔ 各层事件订阅</h4>
+                <pre><code>type LifecycleEvent =
+  | 'session:start'
+  | 'session:end'
+  | 'before-command'
+  | 'after-command'
+  | 'before-file-change'
+  | 'after-file-change'
+  | 'on-error'
+  | 'task:complete'
+  | 'skill:archive';
+
+interface HookDefinition {
+  id: string;
+  event: LifecycleEvent;
+  condition?: HookCondition;
+  action: HookAction;
+}
+
+interface HookCondition {
+  filePattern?: RegExp;
+  commandPattern?: RegExp;
+  gitStatus?: string[];
+}
+
+interface HookAction {
+  type: 'shell' | 'script' | 'http';
+  payload: string; // shell command / js path / webhook url
+}</code></pre>
+            </div>
+
+            <div class="interface-block">
+                <h4>Tool-as-Control-Plane ↔ Policy Engine</h4>
+                <pre><code>interface Tool {
+  name: string;
+  description: string;
+  inputSchema: JSONSchema;
+  execute(args: Record&lt;string, unknown&gt;, context: ToolContext): Promise&lt;ToolResult&gt;;
+}
+
+interface ToolContext {
+  sessionId: string;
+  caller: 'agent' | 'dashboard' | 'bot' | 'hook';
+  auditLogger: AuditLogger;
+}
+
+interface ToolResult {
+  status: 'success' | 'error' | 'stream';
+  data?: unknown;
+  error?: string;
+  metadata?: {
+    durationMs: number;
+    tokensUsed?: number;
+  };
+}
+
+interface ToolPolicy {
+  toolPattern: string; // 支持通配，如 "shell_*" / "file_write"
+  condition?: (args: Record&lt;string, unknown&gt;) =&gt; boolean;
+  action: 'allow' | 'deny' | 'confirm';
+  reason?: string;
+}
+
+interface ToolController {
+  register(tool: Tool): void;
+  unregister(toolName: string): void;
+  execute(toolName: string, args: Record&lt;string, unknown&gt;, context: ToolContext): Promise&lt;ToolResult&gt;;
+  listTools(): Tool[];
+  registerPolicy(policy: ToolPolicy): void;
+  evaluatePolicy(toolName: string, args: Record&lt;string, unknown&gt;): ToolPolicy;
+}
+
+interface HTTPAsTool extends Tool {
+  endpoint: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  headers?: Record&lt;string, string&gt;;
+  timeoutMs: number;
+  rateLimit?: {
+    maxRequests: number;
+    windowMs: number;
+  };
+}</code></pre>
+            </div>
+
+            <div class="interface-block">
+                <h4>Dashboard Server ↔ State Sync Bridge</h4>
+                <pre><code>interface DashboardServer {
+  start(port?: number): Promise&lt;string&gt;; // 返回访问 URL
+  stop(): Promise&lt;void&gt;;
+  broadcast(event: SyncEvent): void;
+}
+
+interface SyncEvent {
+  type: 'task:progress' | 'session:update' | 'model:switch' | 'session:new';
+  payload: Record&lt;string, unknown&gt;;
+  timestamp: number;
+  sessionId: string;
+}
+
+interface StateSyncBridge {
+  publish(event: SyncEvent): void;
+  subscribe(handler: (event: SyncEvent) =&gt; void): () =&gt; void;
+  acquireLock(sessionId: string, clientType: ClientType): Promise&lt;boolean&gt;;
+  releaseLock(sessionId: string): void;
+}
+
+type ClientType = 'cli' | 'dashboard' | 'bot';</code></pre>
+            </div>
+
+            <div class="interface-block">
+                <h4>Bot Adapter ↔ Message Router</h4>
+                <pre><code>interface BotAdapter {
+  id: string;
+  platform: 'slack' | 'telegram' | 'discord';
+  start(): Promise&lt;void&gt;;
+  stop(): Promise&lt;void&gt;;
+  sendMessage(channelId: string, text: string, options?: MessageOptions): Promise&lt;void&gt;;
+  onMessage(handler: (msg: PlatformMessage) =&gt; void): void;
+}
+
+interface MessageRouter {
+  route(incoming: PlatformMessage): Promise&lt;string&gt;; // 返回 sessionId
+  broadcast(sessionId: string, outgoing: OutgoingMessage): void;
+  registerAdapter(adapter: BotAdapter): void;
+}
+
+interface PlatformMessage {
+  platform: string;
+  userId: string;
+  channelId: string;
+  text: string;
+  threadId?: string;
+  timestamp: number;
+}</code></pre>
+            </div>
+
+            <div class="interface-block">
+                <h4>Code Review Engine ↔ Refactoring Orchestrator</h4>
+                <pre><code>interface CodeReviewEngine {
+  review(diff: string, context: ContextSnapshot): Promise&lt;ReviewReport&gt;;
+  analyzeStyle(files: string[]): Promise&lt;StyleProfile&gt;;
+}
+
+interface ReviewReport {
+  summary: string;
+  issues: ReviewIssue[];
+  styleViolations: StyleViolation[];
+}
+
+interface ReviewIssue {
+  file: string;
+  line: number;
+  severity: 'critical' | 'warning' | 'info';
+  category: 'bug' | 'performance' | 'security' | 'maintainability';
+  description: string;
+  suggestion: string;
+}
+
+interface RefactoringOrchestrator {
+  renameSymbol(symbol: string, newName: string, scope: string[]): Promise&lt;FileEdit[]&gt;;
+  extractComponent(params: ExtractComponentParams): Promise&lt;FileEdit[]&gt;;
+  syncDocs(fileChanges: FileChange[]): Promise&lt;FileEdit[]&gt;;
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="tech-stack">
+            <h2><span class="num">13</span> 技术选型</h2>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>层级</th><th>组件</th><th>选型</th><th>备选</th><th>理由</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>运行时</td>
+                            <td>Node.js</td>
+                            <td>Node.js 22 LTS</td>
+                            <td>Deno, Bun</td>
+                            <td>生态成熟，MCP SDK 原生支持，TypeScript 编译链完善</td>
+                        </tr>
+                        <tr>
+                            <td>语言</td>
+                            <td>TypeScript</td>
+                            <td>TS 5.7+</td>
+                            <td>—</td>
+                            <td>类型安全，接口契约清晰，IDE 体验好</td>
+                        </tr>
+                        <tr>
+                            <td>CLI 框架</td>
+                            <td>Command Parser</td>
+                            <td>Commander.js + Inquirer.js</td>
+                            <td>oclif, Ink</td>
+                            <td>轻量、社区广泛、REPL 与交互式提示支持好</td>
+                        </tr>
+                        <tr>
+                            <td>终端渲染</td>
+                            <td>Stream Renderer</td>
+                            <td>Marked + Chalk + Ora</td>
+                            <td>Blessed, Ink</td>
+                            <td>纯文本流式渲染，无需 React 运行时，启动快</td>
+                        </tr>
+                        <tr>
+                            <td>Dashboard 前端</td>
+                            <td>Web Dashboard</td>
+                            <td>React 18 + Vite</td>
+                            <td>Vue, Svelte</td>
+                            <td>与路线图统一技术栈，本地打包零外部 CDN</td>
+                        </tr>
+                        <tr>
+                            <td>Dashboard 服务</td>
+                            <td>Dashboard Server</td>
+                            <td>Express + WebSocket (ws)</td>
+                            <td>Fastify, Hono</td>
+                            <td>生态成熟，与 Node.js 运行时集成简单</td>
+                        </tr>
+                        <tr>
+                            <td>消息网关</td>
+                            <td>Bot Adapter</td>
+                            <td>Slack Bolt + node-telegram-bot-api + discord.js</td>
+                            <td>—</td>
+                            <td>各平台官方 SDK，协议支持完整，社区维护活跃</td>
+                        </tr>
+                        <tr>
+                            <td>代码审查</td>
+                            <td>Static Linter</td>
+                            <td>ESLint API + TypeScript Compiler API</td>
+                            <td>—</td>
+                            <td>本地零依赖，AST 解析精度高，与项目配置天然兼容</td>
+                        </tr>
+                        <tr>
+                            <td>任务调度</td>
+                            <td>DAG Engine</td>
+                            <td>自定义拓扑排序 + P-Queue</td>
+                            <td>Bull, Agenda</td>
+                            <td>本地执行无需 Redis，p-queue 控制并发足够</td>
+                        </tr>
+                        <tr>
+                            <td>向量存储</td>
+                            <td>Vector DB</td>
+                            <td>sqlite-vec</td>
+                            <td>LanceDB, Chroma</td>
+                            <td>零依赖嵌入式，SQLite 兼容，无需额外服务</td>
+                        </tr>
+                        <tr>
+                            <td>图存储</td>
+                            <td>Graph Store</td>
+                            <td>内存邻接表 + SQLite 持久化</td>
+                            <td>Neo4j, Dgraph</td>
+                            <td>本地优先，项目级图规模可控，避免重依赖</td>
+                        </tr>
+                        <tr>
+                            <td>进程通信</td>
+                            <td>Message Bus</td>
+                            <td>HTTP-as-Tool（本地 HTTP Server + 工具封装）</td>
+                            <td>gRPC, ZeroMQ</td>
+                            <td>工具即控制面：所有网络交互封装为标准化工具调用，可审计、可拦截、可替换；HTTP 只是工具的一种实现</td>
+                        </tr>
+                        <tr>
+                            <td>工具控制面</td>
+                            <td>Tool Controller + Policy Engine</td>
+                            <td>Node.js + 自定义 AST 解析器</td>
+                            <td>—</td>
+                            <td>所有工具（Shell / 文件 / HTTP / MCP）的统一策略、路由与审计网关；AST 解析 + 白名单在控制器层完成</td>
+                        </tr>
+                        <tr>
+                            <td>安全沙箱</td>
+                            <td>Process Isolation</td>
+                            <td>Node.js child_process + worker_threads</td>
+                            <td>nsjail, bubblewrap</td>
+                            <td>运行时进程隔离与资源限制，作为 Tool Controller 策略通过后的执行层防护</td>
+                        </tr>
+                        <tr>
+                            <td>模型 SDK</td>
+                            <td>Model Gateway</td>
+                            <td>@anthropic-ai/sdk + OpenAI SDK</td>
+                            <td>—</td>
+                            <td>主流模型原生 SDK，统一封装为内部接口</td>
+                        </tr>
+                        <tr>
+                            <td>MCP SDK</td>
+                            <td>MCP Client</td>
+                            <td>@modelcontextprotocol/sdk</td>
+                            <td>—</td>
+                            <td>官方 SDK，协议兼容性保证</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="adr">
+            <h2><span class="num">14</span> 架构决策记录（ADR）</h2>
+
+            <div class="adr-item">
+                <div class="adr-meta">
+                    <span class="adr-status">已确认 Accepted</span>
+                    <span style="color: var(--text-muted);">ADR-001 · 2026-05-21</span>
+                </div>
+                <h4>本地优先架构，而非云原生</h4>
+                <p><strong>背景：</strong>AI Agent 类产品天然有云端部署的诱惑（便于集中训练、持续更新、多设备同步）。</p>
+                <p><strong>决策：</strong>核心逻辑、文件操作、记忆存储全部放在本地 Node.js 进程，云端仅作为可选的模型 API 通道。</p>
+                <p><strong>理由：</strong></p>
+                <ul class="feature-list">
+                    <li><span class="check">✓</span> <strong>数据隐私</strong> — 用户代码、项目结构、审计日志不出本地，满足企业合规</li>
+                    <li><span class="check">✓</span> <strong>零延迟</strong> — 文件操作和命令执行无需网络往返</li>
+                    <li><span class="check">✓</span> <strong>离线可用</strong> — 本地模型（Ollama 等）可在无网络环境运行</li>
+                    <li><span class="check">✓</span> <strong>成本可控</strong> — 无服务端运维成本，用户仅需承担模型 API 费用</li>
+                </ul>
+                <p><strong>代价：</strong>多设备同步需用户自行借助 Git / Syncthing；GEPA 循环的跨设备协同无法原生支持。</p>
+            </div>
+
+            <div class="adr-item">
+                <div class="adr-meta">
+                    <span class="adr-status">已确认 Accepted</span>
+                    <span style="color: var(--text-muted);">ADR-002 · 2026-05-21</span>
+                </div>
+                <h4>插件化分层架构，而非微服务</h4>
+                <p><strong>背景：</strong>子代理编排天然适合微服务拆分，但 Nova Agent 是单机 CLI 工具。</p>
+                <p><strong>决策：</strong>采用同进程分层 + 子进程 Specialist Agent 的混合模式，层间通过内存事件总线通信，Agent 间通过工具控制面（HTTP-as-Tool）通信。所有网络交互均被封装为标准化工具调用，而非裸 Socket 连接。</p>
+                <p><strong>理由：</strong></p>
+                <ul class="feature-list">
+                    <li><span class="check">✓</span> <strong>启动速度</strong> — 单进程 + 懒加载，避免微服务的冷启动延迟</li>
+                    <li><span class="check">✓</span> <strong>调试简单</strong> — 本地单进程堆栈清晰，无需分布式追踪</li>
+                    <li><span class="check">✓</span> <strong>资源可控</strong> — Node.js 单进程内存可控，子进程可设置资源上限</li>
+                    <li><span class="check">✓</span> <strong>部署简单</strong> — 一个 npm 包即可安装，无需 Docker / K8s</li>
+                </ul>
+                <p><strong>代价：</strong>长期演进中若需扩展为服务端产品，需重构通信层为网络 RPC。</p>
+            </div>
+
+            <div class="adr-item">
+                <div class="adr-meta">
+                    <span class="adr-status">已确认 Accepted</span>
+                    <span style="color: var(--text-muted);">ADR-003 · 2026-05-21</span>
+                </div>
+                <h4>GEPA 循环在本地执行，而非服务端训练</h4>
+                <p><strong>背景：</strong>云端集中训练可获取更大规模数据，但违背了本地优先原则。</p>
+                <p><strong>决策：</strong>GEPA 的 Generate-Evaluate-Prune-Archive 全部在本地完成，Skill Document 存储在用户本地磁盘。</p>
+                <p><strong>理由：</strong></p>
+                <ul class="feature-list">
+                    <li><span class="check">✓</span> <strong>隐私保护</strong> — 用户的成功模式与失败教训是敏感信息，不上传云端</li>
+                    <li><span class="check">✓</span> <strong>即时反馈</strong> — 本地归档的 Skill 可立即参与下一轮任务，无需同步延迟</li>
+                    <li><span class="check">✓</span> <strong>个性化强</strong> — 每个用户的 Skill 仓库独立，不受社区平均水平的稀释</li>
+                    <li><span class="check">✓</span> <strong>零额外成本</strong> — 无需云端训练集群与存储费用</li>
+                </ul>
+                <p><strong>代价：</strong>Skill 无法在设备间自动同步；新用户无法继承社区预训练 Skill（需通过 Skill Market 手动安装）。</p>
+            </div>
+
+            <div class="adr-item">
+                <div class="adr-meta">
+                    <span class="adr-status">已确认 Accepted</span>
+                    <span style="color: var(--text-muted);">ADR-004 · 2026-05-21</span>
+                </div>
+                <h4>模型层完全解耦，不自研基础模型</h4>
+                <p><strong>背景：</strong>自研基础模型可打造差异化壁垒，但投入巨大且迭代慢。</p>
+                <p><strong>决策：</strong>架构上通过 Model Gateway 统一适配 OpenAI-compatible API，不自研任何基础模型，专注 Agent 编排与工具链。v1.0 仅内置单一默认 Provider，多模型切换将在后续版本开放。</p>
+                <p><strong>理由：</strong></p>
+                <ul class="feature-list">
+                    <li><span class="check">✓</span> <strong>零锁定（架构就绪）</strong> — 模型层已解耦，后续版本将支持在 Anthropic、OpenAI、本地模型间切换</li>
+                    <li><span class="check">✓</span> <strong>永远最优</strong> — 模型技术迭代快，解耦后可随时接入最新 SOTA 模型</li>
+                    <li><span class="check">✓</span> <strong>专注优势</strong> — 将资源投入 Agent 编排、GEPA、安全沙箱等差异化能力</li>
+                    <li><span class="check">✓</span> <strong>降低风险</strong> — 避免模型训练的法律、合规、伦理风险</li>
+                </ul>
+                <p><strong>代价：</strong>模型 API 成本由用户承担；v1.0 暂不支持模型切换，模型能力上限由当前接入的 Provider 决定。</p>
+            </div>
+        </section>
+
+        <section id="fallback">
+            <h2><span class="num">15</span> 弹性架构与回退策略</h2>
+            <p>
+                本架构设计充分吸纳产品路线图中的风险预判，在关键高级能力（v0.12 及以后）的接入点上预留了清晰的回退路径。
+                任何高级功能若无法在验收标准内交付，均可无损收敛回单 Agent + 手动确认的核心模式，确保"高信任开发协作者"定位不被动摇。
+            </p>
+
+            <div class="adr-item">
+                <h4 style="color: var(--danger);">风险 1：MCP 协议生态不成熟</h4>
+                <p><strong>影响：</strong>v0.7 的 MCP 支持可能因社区 Server 质量不稳定导致体验差。</p>
+                <p><strong>架构回退：</strong>扩展层的 MCP Client 设计为可选插件，底层优先实现内置工具集（文件/Shell/Git）作为兜底。若 MCP 生态未成熟，可完全禁用 MCP Client 而不影响核心功能。</p>
+            </div>
+
+            <div class="adr-item">
+                <h4 style="color: var(--danger);">风险 2：多 Agent 编排复杂度超预期</h4>
+                <p><strong>影响：</strong>v0.12 的并行 Specialist Agent 可能导致上下文爆炸或结果冲突难以调和。</p>
+                <p><strong>架构回退：</strong>智能层的 Agent Orchestrator 支持运行时降级为"伪并行"模式——在同一 Agent 进程内串行执行但快速切换角色提示（System Prompt），保留多角色体验但消除跨进程通信复杂度。该模式通过配置开关 <code>--pseudo-parallel</code> 激活。</p>
+            </div>
+
+            <div class="adr-item">
+                <h4 style="color: var(--danger);">风险 3：GEPA 自进化效果不明显</h4>
+                <p><strong>影响：</strong>v0.13 的 Skill 积累可能因评估指标设计不当，导致生成的 Skill 质量低、无法复用。</p>
+                <p><strong>架构回退：</strong>GEPA 循环的 Generate 阶段可降级为"手动模板导入"：用户手动编写 Markdown 格式的最佳实践模板，Skill Repository 直接按模板执行，绕过自动评估与剪枝。保留结构化知识管理能力，去除自动进化的不确定性。</p>
+            </div>
+
+            <div class="adr-item">
+                <h4 style="color: var(--danger);">风险 4：Web Dashboard 与 CLI 状态同步难度</h4>
+                <p><strong>影响：</strong>v0.9 的 Dashboard 可能因 IPC 机制复杂导致状态不同步或延迟高。</p>
+                <p><strong>架构回退：</strong>Dashboard Server 支持运行时降级为只读历史查看器：关闭 WebSocket 实时推送，改为定时轮询 SQLite 快照（5s 间隔），不实时同步正在执行的任务。该模式通过 <code>--read-only</code> 启动参数激活，显著降低架构复杂度。</p>
+            </div>
+
+            <div class="adr-item" style="border-left: 4px solid var(--success);">
+                <h4 style="color: var(--success);">总体回退原则</h4>
+                <p>
+                    任何高级功能（v0.12 及以后）若无法在验收标准内交付，均收敛回单 Agent + 手动确认模式。
+                    v1.0 的发布时间不因高级功能阻塞而无限延后。核心"高信任开发协作者"定位是最高优先级，所有扩展能力均围绕此定位生长，而非替代。
+                </p>
+            </div>
+        </section>
+
+        <section>
+            <h2><span class="num">16</span> 总结</h2>
+            <p>
+                Nova Agent CLI 架构以<strong>本地优先、安全优先、模型无关、开放扩展</strong>为设计原则，
+                采用五层插件化分层架构（表现层 → 应用层 → 智能层 → 扩展层 → 基础设施层），
+                通过 GEPA 自进化循环、并行子代理编排、持久化记忆三大核心机制形成差异化竞争力。
+            </p>
+            <p>
+                关键接口已定义模块间契约，技术选型遵循"零额外依赖、零额外服务"的本地优先策略。
+                架构决策记录（ADR）明确了本地优先、单进程分层、本地 GEPA、模型解耦四大战略选择及其权衡。
+                弹性架构与回退策略章节为各 Phase 高级能力预留了清晰的降级路径，确保 v1.0 发布不受单一高级功能阻塞。
+            </p>
+            <p style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-card); border-radius: 0.75rem; border-left: 4px solid var(--primary);">
+                <strong>下一步行动：</strong>基于本架构设计与产品路线图，各模块按 Phase 渐进交付详细技术设计文档。
+                Phase 1（v0.1~v0.4）优先输出 CLI 入口、FS 抽象、Diff 引擎与 Shell 沙箱的状态机与错误处理策略；
+                Phase 2~5 的扩展层与高级能力（Dashboard、消息网关、多 Agent 编排、GEPA）在对应迭代启动前输出接口定义与单元测试方案。
+            </p>
+        </section>
+    </main>
+
+    <script>
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
